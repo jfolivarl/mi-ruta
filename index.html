@@ -84,6 +84,8 @@ button, input { font: inherit; }
 /* Nosotros: punto azul llevando la bandera del logo */
 .yo, .yo-demo { position: relative; display: block; width: 40px; height: 44px; }
 .yo-punto { position: absolute; left: 3px; bottom: 1px; width: 18px; height: 18px; border-radius: 50%; background: var(--punto); border: 3px solid #fff; box-shadow: 0 0 0 1px rgba(11, 23, 34, .5); }
+.yo-cono { position: absolute; left: -36px; top: -14px; width: 96px; height: 96px; display: none; transform: rotate(var(--rumbo, 0deg)); transform-origin: 50% 50%; transition: transform .15s linear; pointer-events: none; }
+.yo.con-rumbo .yo-cono { display: block; }
 .yo-bandera { position: absolute; left: 3px; top: 0; width: 26px; height: 34px; overflow: visible; }
 .yo-bandera .mastil { stroke: var(--bandera); stroke-width: 2.4; stroke-linecap: round; fill: none; }
 .yo-bandera .pomo, .yo-bandera .tela { fill: var(--bandera); }
@@ -365,7 +367,7 @@ span.insignia { cursor: default; }
   .carta:hover { transform: translateY(-2px); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .mk, .toast, .nav-flecha, .carta, .premio, .xp span { transition: none; }
+  .yo-cono, .mk, .toast, .nav-flecha, .carta, .premio, .xp span { transition: none; }
   .mk.sig, .yo.gps .yo-punto, .reloj.ultimos .arco { animation: none; }
   .arco, .norte svg, #mapa.anim-giro, #mapa.anim-giro .leaflet-marker-icon > * { transition: none; }
 }
@@ -1203,6 +1205,7 @@ var ILU = (function () {
     $('#norte').style.setProperty('--rot', ROT + 'deg');
     $('#norte').classList.toggle('girado', Math.abs(ROT) > 0.5);
     $('#norte').setAttribute('aria-label', Math.abs(ROT) > 0.5 ? 'Volver a orientar al norte' : 'Norte arriba');
+    pintarRumbo();
     guiar();
   }
   function dejarDeSeguir() { if (gps.id !== null && gps.seguir) { gps.seguir = false; botones(); } }
@@ -1299,7 +1302,7 @@ var ILU = (function () {
   }
   function crearEquipo() {
     if (!mapa || equipo) return;
-    var html = '<span class="yo"><svg class="yo-bandera" viewBox="0 0 26 34" aria-hidden="true"><path class="mastil" d="M9 31V5"/><circle class="pomo" cx="9" cy="4" r="2.4"/><path class="tela" d="M10.5 6.5L24 11.5 10.5 16.5z"/></svg><span class="yo-punto"></span><span class="yo-ok">OK</span></span>';
+    var html = '<span class="yo"><svg class="yo-cono" viewBox="0 0 80 80" aria-hidden="true"><defs><radialGradient id="cono-g" cx="40" cy="40" r="40" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2F8CFF" stop-opacity=".9"/><stop offset="1" stop-color="#2F8CFF" stop-opacity="0"/></radialGradient></defs><path d="M40 40L22.1 2.8A40 40 0 0 1 57.9 2.8z" fill="url(#cono-g)"/></svg><svg class="yo-bandera" viewBox="0 0 26 34" aria-hidden="true"><path class="mastil" d="M9 31V5"/><circle class="pomo" cx="9" cy="4" r="2.4"/><path class="tela" d="M10.5 6.5L24 11.5 10.5 16.5z"/></svg><span class="yo-punto"></span><span class="yo-ok">OK</span></span>';
     equipo = L.marker(posEquipo(), { icon: L.divIcon({ className: 'mk-caja', html: html, iconSize: [40, 44], iconAnchor: [12, 34] }), interactive: false, keyboard: false, zIndexOffset: 3000 }).addTo(mapa);
   }
   function moverEquipo(dest, animar) {
@@ -1371,24 +1374,36 @@ var ILU = (function () {
   /* ---------- Navegación a pie: flecha y calles, como un GPS ---------- */
   var OSRM = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot/';
   var nav = { dest: null, ruta: null, pasos: [], paso: 1, pidiendo: false, ultimo: 0, fallo: false };
-  var rumboDisp = null; /* hacia dónde mira el móvil (brújula) */
+  var rumboDisp = null, curso = null; /* hacia dónde mira el móvil (brújula) o hacia dónde camináis (GPS) */
+  /* Haz de luz delante del punto azul: apunta hacia donde mira el móvil */
+  function pintarRumbo() {
+    var el = equipo && equipo.getElement(), yo = el && el.firstChild;
+    if (!yo) return;
+    var h = rumboDisp != null ? rumboDisp : curso;
+    yo.classList.toggle('con-rumbo', h != null && gps.id !== null);
+    if (h != null) yo.style.setProperty('--rumbo', Math.round(h + ROT) + 'deg');
+  }
   var GIROS = {
     left: ['m-izq', 'Gira a la izquierda'], right: ['m-der', 'Gira a la derecha'],
     'slight left': ['m-lig-izq', 'Ligeramente a la izquierda'], 'slight right': ['m-lig-der', 'Ligeramente a la derecha'],
     'sharp left': ['m-izq', 'Gira del todo a la izquierda'], 'sharp right': ['m-der', 'Gira del todo a la derecha'],
     straight: ['m-recto', 'Sigue recto'], uturn: ['m-vuelta', 'Da la vuelta']
   };
+  var brujulaOn = false;
   function activarBrujula() {
     var oir = function () {
+      if (brujulaOn) return; brujulaOn = true;
       window.addEventListener('deviceorientation', function (e) {
         if (e.webkitCompassHeading != null) rumboDisp = e.webkitCompassHeading;
         else if (e.absolute && e.alpha != null) rumboDisp = (360 - e.alpha) % 360;
+        else return;
+        if (!pintarRumbo.pend) { pintarRumbo.pend = true; requestAnimationFrame(function () { pintarRumbo.pend = false; pintarRumbo(); }); }
       }, true);
     };
     try {
       if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission().then(function (r) { if (r === 'granted') oir(); }, function () { /* sin brújula */ });
-      } else if (window.DeviceOrientationEvent) oir();
+      } else oir();
     } catch (e) { /* sin brújula */ }
   }
   function pedirRuta(o) {
@@ -1458,6 +1473,8 @@ var ILU = (function () {
     if (!mapa) return;
     var ll = [pos.coords.latitude, pos.coords.longitude], acc = pos.coords.accuracy || 30;
     gps.pos = { lat: ll[0], lng: ll[1] };
+    if (pos.coords.heading != null && !isNaN(pos.coords.heading) && (pos.coords.speed || 0) > 0.4) curso = pos.coords.heading;
+    pintarRumbo();
     if (!gps.halo) gps.halo = L.circle(ll, { radius: acc, color: '#1DA0AB', weight: 1, fillOpacity: 0.12, interactive: false }).addTo(mapa);
     else gps.halo.setLatLng(ll).setRadius(acc);
     cancelAnimationFrame(animEquipo); equipo.setLatLng(ll);
@@ -1483,7 +1500,7 @@ var ILU = (function () {
       ['halo', 'guia'].forEach(function (k) { if (gps[k]) { gps[k].remove(); gps[k] = null; } });
       nav.dest = null; nav.ruta = null; nav.pasos = [];
       gps.pos = null;
-      var el = equipo && equipo.getElement(); if (el) el.firstChild.classList.remove('gps', 'dentro');
+      var el = equipo && equipo.getElement(); if (el) el.firstChild.classList.remove('gps', 'dentro', 'con-rumbo');
       moverEquipo(posEquipo(), true);
       botones(); guiar(); return;
     }
