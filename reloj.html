@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="disabled-adaptations" content="watch">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b1722">
+<title>Mi Ruta · Reloj</title>
+<link rel="icon" href="logo.png" type="image/png">
+<style>
+/* Mi Ruta en el Apple Watch: solo la hora, qué toca y cuánto queda. Siempre oscuro. */
+:root { color-scheme: dark; --bg: #0b1722; --card: #172D43; --titulo: #e8eef4; --texto: #dbe3ea; --muted: #9fb0c0; --line: #27405a; --dorado: #D6AD55; --bandera: #FEBF04; --turquesa: #3CC0CA; --acento: #14808A; }
+* { box-sizing: border-box; min-width: 0; }
+body { margin: 0; padding: 6px 6px 18px; background: var(--bg); color: var(--texto); font: 15px/1.3 -apple-system, system-ui, Roboto, sans-serif; -webkit-text-size-adjust: 100%; }
+p, h1, h2 { margin: 0; }
+.cab { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.cab img { width: 30px; height: 30px; }
+.cab h1 { font-size: 15px; font-weight: 600; color: var(--titulo); }
+.anillo { position: relative; width: 132px; height: 132px; margin: 2px auto 8px; }
+.anillo svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.anillo circle { fill: none; stroke-width: 3.4; }
+.fondo { stroke: var(--line); }
+.arco { stroke: var(--dorado); stroke-linecap: round; stroke-dasharray: 100; }
+.arco.ultimos { stroke: var(--turquesa); }
+.centro { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.centro time { font-size: 27px; font-weight: 300; color: var(--dorado); font-variant-numeric: tabular-nums; }
+.centro span { font-size: 12px; color: var(--texto); }
+.ahora { text-align: center; }
+.ahora small { display: block; font-size: 12px; color: var(--turquesa); }
+.ahora h2 { font-size: 18px; font-weight: 600; color: var(--titulo); }
+.desp { margin-top: 4px; text-align: center; font-size: 13px; color: var(--muted); }
+.modos { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 12px 0 8px; }
+.modos button { min-height: 36px; border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--texto); font: inherit; font-size: 13px; }
+.modos button[aria-pressed="true"] { background: var(--acento); border-color: var(--acento); color: #fff; }
+ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+li { display: grid; grid-template-columns: 44px 1fr; gap: 6px; padding: 6px 8px; border-radius: 12px; background: var(--card); }
+li time { color: var(--dorado); font-variant-numeric: tabular-nums; }
+li.pasada { opacity: .5; }
+li.actual { outline: 2px solid var(--bandera); }
+.pie { margin-top: 10px; text-align: center; font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header class="cab"><img src="logo.png" width="30" height="30" alt="Logo de Mi Ruta"><h1>Mi Ruta</h1></header>
+<div class="anillo"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="fondo" cx="20" cy="20" r="16"/><circle class="arco" id="arco" cx="20" cy="20" r="16" pathLength="100"/></svg>
+  <div class="centro"><time id="hora">--:--</time><span id="queda"></span></div></div>
+<div class="ahora"><small id="etiqueta">Ahora</small><h2 id="sitio"></h2></div>
+<p class="desp" id="desp"></p>
+<div class="modos" role="group" aria-label="Ruta"><button type="button" data-modo="completa">Completa</button><button type="button" data-modo="expres">Exprés</button></div>
+<ol id="lista"></ol>
+<p class="pie">Autor: Juan Felipe Olivar Londoño</p>
+<script>
+/* ====== RUTA DE MAÑANA · Toulouse en pareja (solo lo del PDF) ======
+   nivel: 3 imprescindible (prioridad del PDF) · 2 recomendado · 1 si da tiempo */
+var RUTA = {
+  id: 'toulouse-pareja',
+  titulo: 'Toulouse en pareja',
+  juego: 'Conquista Toulouse',
+  ciudad: 'Toulouse',
+  fecha: '2026-11-21',
+  fechaTexto: 'Sábado 21 de noviembre',
+  inicio: '11:00',
+  fin: '18:00',
+  nota: 'Concierto a las 20:00',
+  idea: 'Un recorrido a pie por el centro histórico, con patrimonio, gastronomía francesa y rincones con encanto. Ritmo tranquilo.',
+  centro: [43.6025, 1.4420],
+  epilogo: { hora: '20:00', titulo: 'Concierto', texto: 'Que disfrutéis de Toulouse, de la buena comida y, sobre todo, del concierto. Bon voyage!' },
+  consejos: [
+    'Llevad calzado cómodo: el recorrido está pensado para hacerse caminando.',
+    'Comprobad los horarios de la basílica, el Capitole, el mercado y el Couvent des Jacobins: pueden variar según el día.',
+    'Si vais justos de tiempo, priorizad Saint-Sernin, Capitole, Jacobins y el paseo por el Garona (los círculos grandes).',
+    'Como profesionales del turismo, fijaos en la oferta gastronómica, los espacios de eventos y los establecimientos con encanto.'
+  ],
+  paradas: [
+    { id: 'desayuno', hora: '10:00', nombre: 'Desayuno', tipo: 'comida', nivel: 2, dur: '45 min',
+      texto: 'Empezad el día con calma: un buen desayuno antes de salir hacia Saint-Sernin.' },
+    { id: 'saint-sernin', hora: '11:00', nombre: 'Basílica de Saint-Sernin', tipo: 'monumento', nivel: 3, lat: 43.60845, lng: 1.44200, dur: '25–35 min',
+      texto: 'Una de las grandes joyas románicas de Europa, vinculada al Camino de Santiago. Fijaos en su arquitectura de ladrillo rosa.' },
+    { id: 'capitole', hora: '11:40', nombre: 'Place du Capitole', tipo: 'monumento', nivel: 3, lat: 43.60440, lng: 1.44370, dur: '35 min',
+      texto: 'El corazón de Toulouse: una plaza monumental rodeada de terrazas y calles comerciales. Si está abierto, entrad al Capitole a ver sus salas.' },
+    { id: 'victor-hugo', hora: '12:15', nombre: 'Mercado Victor Hugo', tipo: 'comida', nivel: 2, lat: 43.60580, lng: 1.44800, dur: '45 min',
+      texto: 'Productos del suroeste francés: quesos, foie gras, embutidos, productos regionales y repostería. Arriba hay restaurantes.' },
+    { id: 'comida', hora: '13:00', nombre: 'Comida en el centro', tipo: 'comida', nivel: 2, eleccion: true, dur: '1 h 15 min',
+      texto: 'Elegid una de las tres propuestas según el ambiente que os apetezca. Comprobad horarios y disponibilidad el mismo día.' },
+    { id: 'jacobins', hora: '14:15', nombre: 'Couvent des Jacobins', tipo: 'monumento', nivel: 3, lat: 43.60360, lng: 1.44010, dur: '30–45 min',
+      texto: 'Un conjunto gótico espectacular. Lo más famoso es su columna central, con forma de palmera.' },
+    { id: 'assezat', hora: '15:15', nombre: 'Hôtel d’Assézat y Les Carmes', tipo: 'paseo', nivel: 2, lat: 43.60065, lng: 1.44080, dur: '1 h',
+      texto: 'Joya renacentista con un patio precioso, sede de la Fundación Bemberg. Después, callejead por Les Carmes: tiendas independientes, plazuelas y cafés.' },
+    { id: 'daurade', hora: '16:15', nombre: 'Place de la Daurade y Pont Neuf', tipo: 'paseo', nivel: 3, lat: 43.60150, lng: 1.43870, dur: '45 min',
+      texto: 'Pasead junto al Garona desde la Place de la Daurade hasta el Pont Neuf, uno de los puentes más representativos de Toulouse. Zona estupenda para fotos.' },
+    { id: 'cafe', hora: '17:00', nombre: 'Café, dulce y paseo final', tipo: 'comida', nivel: 1, lat: 43.59990, lng: 1.44150, dur: '1 h',
+      texto: 'Tomad algo sin prisa y buscad las violetas de Toulouse: caramelos y dulces de violeta, uno de los símbolos de la ciudad.' },
+    { id: 'hotel', hora: '18:00', nombre: 'Regreso al hotel', tipo: 'hotel', nivel: 1, dur: '',
+      texto: 'Tiempo para descansar, cambiaros y prepararos tranquilamente para el concierto de las 20:00.' }
+  ],
+  comidas: [
+    { id: 'emile', nombre: 'Restaurant Émile', zona: 'Place Saint-Georges', lat: 43.60010, lng: 1.44830,
+      texto: 'Cocina francesa tradicional y ambiente ideal en pareja. Plato a buscar: el cassoulet.', porque: 'Si os apetece una comida especial.' },
+    { id: 'bibent', nombre: 'Le Bibent', zona: 'Place du Capitole', lat: 43.60420, lng: 1.44430,
+      texto: 'Brasserie francesa con un espectacular interior Belle Époque.', porque: 'Para comer en un lugar emblemático.' },
+    { id: 'bistroquet', nombre: 'Bistroquet', zona: 'Rue Labéda', lat: 43.60330, lng: 1.44700,
+      texto: 'Más informal: cocina francesa y tapas o platos para compartir.', porque: 'Si preferís algo desenfadado.' }
+  ]
+};
+
+/* ====== EL JUEGO ======
+   En cada nivel: llegar al sitio y hacer un reto rápido.
+   expres: hora del nivel en la ruta exprés (solo las prioridades del PDF). */
+var JUEGO = {
+  desayuno: { insignia: 'Buenos días', expres: '10:00', reto: 'Foto del primer café (o croissant) del día.' },
+  'saint-sernin': { insignia: 'Peregrinos', expres: '11:00', reto: 'Foto «sujetando» el campanario con la mano, jugando con la perspectiva.' },
+  capitole: { insignia: 'Capitole', expres: '11:40', reto: 'Foto de un salto juntos en mitad de la plaza.' },
+  'victor-hugo': { insignia: 'Gourmets', reto: 'Probad algo del mercado que no hayáis comido nunca.' },
+  comida: { insignia: 'Cassoulet', expres: '12:15', reto: 'Brindis y foto del plato antes del primer bocado.' },
+  jacobins: { insignia: 'Palmera', expres: '13:45', reto: 'Foto en vertical de la columna palmera, desde justo debajo.' },
+  assezat: { insignia: 'Les Carmes', reto: 'Entrad en la tienda más curiosa que encontréis en Les Carmes.' },
+  daurade: { insignia: 'Garona', expres: '14:40', reto: 'Foto juntos con el Garona y el Pont Neuf detrás.' },
+  cafe: { insignia: 'Violetas', reto: 'Probad un caramelo o dulce de violeta.' },
+  hotel: { insignia: 'Listos', expres: '15:30', reto: 'Foto arreglados para el concierto.' }
+};
+var RANGOS = [[0, 'Turistas'], [150, 'Paseantes'], [300, 'Exploradores'], [450, 'Toulousains'], [600, 'Leyendas rosas']];
+
+/* ====== MIS RUTAS · cuadro de mando inicial ======
+   Cada viaje es una tarjeta. lista: true = ya se puede jugar; false = próximamente.
+   Para añadir un viaje: copia una tarjeta, cambia fechas y textos. */
+var CATALOGO = [
+  { id: 'toulouse-pareja', lista: true, nombre: 'Conquista Toulouse', lugares: ['Toulouse'], desde: '2026-11-21', hasta: '2026-11-21', fechas: 'Sábado 21 de noviembre de 2026', ilu: 'portada',
+    texto: 'Un día a pie por el centro histórico: Saint-Sernin, el Capitole, los Jacobins y el Garona. Concierto a las 20:00.' },
+  { id: 'valladolid-leon', lista: false, nombre: 'Valladolid y León', lugares: ['Valladolid', 'León'], desde: '2026-12-05', hasta: '2026-12-09', fechas: 'Del 5 al 9 de diciembre de 2026', ilu: 'leon',
+    texto: 'Cinco días por Castilla y León: el centro de Valladolid y la León de la catedral, las tapas y el barrio Húmedo.' },
+  { id: 'milan-alpes', lista: false, nombre: 'Milán, Lugano, Como y Bernina Express', lugares: ['Milán', 'Lugano', 'Como', 'Bernina Express', 'Navigli'], desde: '2026-12-27', hasta: '2026-12-31', fechas: 'Del 27 al 31 de diciembre de 2026', ilu: 'alpes',
+    texto: 'Milán, Lugano y el lago de Como, el tren Bernina Express entre montañas nevadas y despedida del año en los Navigli: aperol, tardeo y Nochevieja.' }
+];
+
+(function () {
+  'use strict';
+  var modo = 'completa';
+  try { modo = localStorage.getItem('miruta:reloj:modo') || 'completa'; } catch (e) { /* sin almacenamiento */ }
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+  var min = function (h) { var p = h.split(':'); return +p[0] * 60 + +p[1]; };
+  var dur = function (m) { var h = Math.floor(m / 60), r = m % 60; return h ? h + ' h' + (r ? ' ' + r : '') : r + ' min'; };
+  function niveles() {
+    return RUTA.paradas.filter(function (p) { return modo === 'completa' || (JUEGO[p.id] || {}).expres; })
+      .map(function (p) { return { nombre: p.nombre, hora: modo === 'expres' ? JUEGO[p.id].expres : p.hora }; })
+      .concat([{ nombre: RUTA.epilogo.titulo, hora: RUTA.epilogo.hora }]);
+  }
+  function pintar() {
+    var N = niveles(), d = new Date(), m = d.getHours() * 60 + d.getMinutes();
+    var hoy = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    var i = -1;
+    if (hoy === RUTA.fecha) N.forEach(function (p, k) { if (m >= min(p.hora)) i = k; });
+    if (hoy > RUTA.fecha) i = N.length - 1;
+    document.getElementById('hora').textContent = pad(d.getHours()) + ':' + pad(d.getMinutes());
+    var arco = document.getElementById('arco'), f = 1, queda = '', etiqueta = 'Ahora', sitio, desp = '';
+    if (i < 0) {
+      etiqueta = hoy < RUTA.fecha ? RUTA.fechaTexto : 'Empieza en ' + dur(min(N[0].hora) - m);
+      sitio = N[0].hora + ' · ' + N[0].nombre;
+    } else if (i >= N.length - 1) {
+      sitio = N[N.length - 1].nombre; desp = '¡Que lo disfrutéis!';
+    } else {
+      var desde = min(N[i].hora), hasta = min(N[i + 1].hora);
+      f = Math.max(0, Math.min(1, (hasta - m) / Math.max(1, hasta - desde)));
+      queda = 'quedan ' + dur(hasta - m);
+      sitio = N[i].nombre; desp = 'Después: ' + N[i + 1].hora + ' · ' + N[i + 1].nombre;
+    }
+    arco.style.strokeDashoffset = String(Math.round((1 - f) * 100));
+    arco.style.opacity = String(0.25 + 0.75 * f);
+    arco.setAttribute('class', 'arco' + (queda && hasta - m <= 5 ? ' ultimos' : ''));
+    document.getElementById('queda').textContent = queda;
+    document.getElementById('etiqueta').textContent = etiqueta;
+    document.getElementById('sitio').textContent = sitio;
+    document.getElementById('desp').textContent = desp;
+    document.getElementById('lista').innerHTML = N.map(function (p, k) {
+      return '<li class="' + (k === i ? 'actual' : (k < i ? 'pasada' : '')) + '"><time>' + p.hora + '</time><span>' + p.nombre + '</span></li>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-modo]'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-modo') === modo)); });
+  }
+  document.querySelector('.modos').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-modo]');
+    if (!b) return;
+    modo = b.getAttribute('data-modo');
+    try { localStorage.setItem('miruta:reloj:modo', modo); } catch (err) { /* sin almacenamiento */ }
+    pintar();
+  });
+  pintar();
+  setInterval(pintar, 20000);
+})();
+</script>
+</body>
+</html>

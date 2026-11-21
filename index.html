@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0b1722">
+<title>Mi Ruta · Conquista Toulouse</title>
+<meta name="description" content="Mi Ruta: un juego para recorrer Toulouse a pie en pareja, con niveles, misiones y álbum de fotos.">
+<link rel="canonical" href="https://jfolivarl.github.io/mi-ruta/">
+<meta property="og:title" content="Mi Ruta · Conquista Toulouse">
+<meta property="og:description" content="Un juego de ruta a pie por Toulouse: niveles, misiones y álbum.">
+<meta property="og:url" content="https://jfolivarl.github.io/mi-ruta/">
+<meta property="og:image" content="https://jfolivarl.github.io/mi-ruta/icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mi Ruta">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&amp;display=swap">
+<link rel="stylesheet" href="leaflet.css">
+<style>
+/* ====== MI RUTA · La Ruta Rosa · estilo JO ======
+   Siempre oscuro, plano, sin degradados. Azul, turquesa y dorado.
+   Círculos con borde dorado = niveles; su tamaño marca la importancia turística. */
+:root {
+  color-scheme: dark;
+  --bg: #0f1e2d;
+  --surface: #13263a;
+  --card: #172D43;
+  --head: #0b1722;
+  --titulo: #e8eef4;
+  --texto: #dbe3ea;
+  --muted: #9fb0c0;
+  --line: #27405a;
+  --turquesa: #1DA0AB;
+  --turquesa-txt: #3CC0CA;
+  --dorado: #D6AD55;
+  --acento: #14808A;
+}
+* { box-sizing: border-box; min-width: 0; }
+html, body { height: 100%; }
+body { margin: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100svh; background: var(--bg); color: var(--texto); font: 16px/1.55 Roboto, system-ui, sans-serif; overflow: hidden; -webkit-text-size-adjust: 100%; }
+h1, h2, h3 { color: var(--titulo); margin: 0; font-weight: 500; }
+p { margin: 0; }
+button, input { font: inherit; }
+.sprite { display: none; }
+.i { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; vertical-align: -4px; }
+:focus-visible { outline: 2px solid var(--turquesa-txt); outline-offset: 2px; }
+
+/* HUD */
+.hud { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 8px 12px; padding-top: max(8px, env(safe-area-inset-top)); background: var(--head); border-bottom: 1px solid var(--line); }
+.logo-btn { background: none; border: 0; padding: 0; border-radius: 50%; cursor: pointer; }
+.logo { width: 52px; height: 52px; display: block; border-radius: 50%; }
+.hud-centro { display: grid; gap: 2px; }
+.marca { font-size: 18px; line-height: 1.1; }
+.hud-linea { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hud-linea strong { color: var(--dorado); font-weight: 500; }
+.xp { height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; }
+.xp span { display: block; height: 100%; width: 0; background: var(--dorado); border-radius: 6px; transition: width .6s; }
+.hud-xp { font-size: 12px; color: var(--titulo); font-variant-numeric: tabular-nums; }
+.banderas { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 1px solid var(--dorado); border-radius: 999px; background: transparent; color: var(--dorado); font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; cursor: pointer; }
+.ban-t { color: var(--titulo); font-size: 13px; }
+@media (max-width: 480px) { .ban-t { display: none; } }
+.redondo { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--head); color: var(--titulo); cursor: pointer; flex: none; }
+.redondo.dorado { border-color: var(--dorado); color: var(--dorado); }
+
+/* Círculos */
+.mk { display: grid; place-items: center; border-radius: 50%; background: var(--card); color: var(--titulo); border: 1.3px solid var(--dorado); font-weight: 500; line-height: 1; flex: none; transition: transform .2s; }
+.mk.n3 { width: 46px; height: 46px; font-size: 18px; box-shadow: 0 0 0 4px var(--head), 0 0 0 5.3px var(--dorado); }
+.mk.n2 { width: 38px; height: 38px; font-size: 16px; }
+.mk.n1 { width: 30px; height: 30px; font-size: 13px; }
+.mk .i { width: 55%; height: 55%; }
+.mk.ok { background: var(--dorado); border-color: var(--dorado); color: var(--head); }
+.mk.sig { animation: latido 1.8s ease-out infinite; }
+.mk-caja { background: none; border: 0; }
+.activa .mk { transform: scale(1.2); }
+@keyframes latido { 0% { box-shadow: 0 0 0 0 rgba(29, 160, 171, .7); } 100% { box-shadow: 0 0 0 16px rgba(29, 160, 171, 0); } }
+:root { --bandera: #FEBF04; --punto: #2F8CFF; }
+/* Nosotros: punto azul llevando la bandera del logo */
+.yo, .yo-demo { position: relative; display: block; width: 40px; height: 44px; }
+.yo-punto { position: absolute; left: 3px; bottom: 1px; width: 18px; height: 18px; border-radius: 50%; background: var(--punto); border: 3px solid #fff; box-shadow: 0 0 0 1px rgba(11, 23, 34, .5); }
+.yo-bandera { position: absolute; left: 3px; top: 0; width: 26px; height: 34px; overflow: visible; }
+.yo-bandera .mastil { stroke: var(--bandera); stroke-width: 2.4; stroke-linecap: round; fill: none; }
+.yo-bandera .pomo, .yo-bandera .tela { fill: var(--bandera); }
+.yo-bandera .tela { stroke: var(--head); stroke-width: .8; stroke-linejoin: round; }
+.yo.gps .yo-punto { animation: latido-azul 1.8s ease-out infinite; }
+.yo-ok { position: absolute; left: 20px; bottom: -4px; display: none; padding: 1px 5px; border-radius: 999px; background: var(--acento); color: #fff; font: 700 10px/1.3 Roboto, sans-serif; border: 1.5px solid #fff; }
+.yo.dentro .yo-ok { display: block; }
+.yo.dentro .yo-punto { background: var(--turquesa); }
+@keyframes latido-azul { 0% { box-shadow: 0 0 0 0 rgba(47, 140, 255, .6); } 100% { box-shadow: 0 0 0 14px rgba(47, 140, 255, 0); } }
+.como .yo-demo { flex: none; width: 38px; }
+.mk.ok .i { stroke-width: 1.6; }
+/* Logo en el mapa, como en Mis viajes: en tableta y escritorio */
+.m-logo { display: none; position: absolute; right: 10px; bottom: 34px; z-index: 1000; width: 72px; height: 72px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+.m-logo img { display: block; width: 100%; height: 100%; }
+@media (min-width: 768px) { .m-logo { display: block; } }
+
+/* Botones */
+.pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 8px 16px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--texto); font: 500 14px Roboto, sans-serif; cursor: pointer; white-space: nowrap; }
+.pill[aria-pressed="true"], .pill.activa { background: var(--acento); border-color: var(--acento); color: #fff; }
+.pill.peligro { border-color: #b0646f; color: #e7a9b1; }
+.pill.grande { min-height: 52px; font-size: 16px; }
+.pill:disabled { opacity: .45; cursor: default; }
+.enlace { background: none; border: 0; color: #fff; text-decoration: underline; cursor: pointer; padding: 0; }
+
+/* Mapa */
+.mapa-zona { position: relative; overflow: hidden; overflow: clip; touch-action: none; }
+#mapa { position: absolute; background: #0d1b29; transform: rotate(var(--rot, 0deg)); transform-origin: 50% 50%; }
+#mapa.anim-giro { transition: transform .35s ease; }
+#mapa .leaflet-marker-icon > * { rotate: calc(var(--rot, 0deg) * -1); }
+#mapa.anim-giro .leaflet-marker-icon > * { transition: rotate .35s ease; }
+.norte-caja { position: absolute; z-index: 1000; left: 10px; bottom: 34px; display: flex; align-items: center; gap: 6px; }
+.norte { display: grid; place-items: center; width: 50px; height: 50px; padding: 0; border-radius: 50%; background: var(--head); border: 2px solid var(--bandera); cursor: pointer; }
+.norte svg { width: 40px; height: 40px; overflow: visible; transform: rotate(var(--rot, 0deg)); transition: transform .35s ease; }
+.norte .aguja-n { fill: var(--bandera); }
+.norte text { fill: var(--bandera); font: 700 17px Roboto, sans-serif; text-anchor: middle; }
+.norte.girado { border-color: var(--bandera); box-shadow: 0 0 0 3px rgba(254, 191, 4, .25); }
+.mapa-pie { position: absolute; z-index: 1000; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; pointer-events: none; }
+.mapa-pie > * { pointer-events: auto; }
+#mapa-escala { padding: 0 0 6px 10px; }
+#mapa.apuntar { cursor: crosshair; }
+.capa-azul { filter: sepia(1) hue-rotate(170deg) saturate(2.2) brightness(.85); }
+.sin-mapa { padding: 20px; color: var(--muted); }
+.panel-izq { position: absolute; z-index: 1000; top: 10px; left: 10px; display: grid; gap: 6px; justify-items: start; max-width: calc(100% - 140px); }
+.reloj { display: flex; align-items: center; gap: 10px; max-width: 100%; background: var(--head); border: 1px solid var(--line); border-radius: 16px; padding: 6px 12px 6px 8px; color: var(--texto); text-align: left; cursor: pointer; }
+.reloj-svg { width: 40px; height: 40px; flex: none; transform: rotate(-90deg); }
+.reloj-svg circle, .res-reloj circle { fill: none; stroke-width: 3.2; }
+.fondo { stroke: var(--line); }
+.arco { stroke: var(--dorado); stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear, opacity 1s linear; }
+.reloj:not(.corre) .arco { opacity: 0; }
+.reloj.ultimos .arco { stroke: var(--turquesa); animation: parpadeo 1.6s ease-in-out infinite; }
+@keyframes parpadeo { 50% { opacity: .2; } }
+.reloj-c { display: grid; min-width: 0; }
+.reloj time { font-size: 24px; font-weight: 300; color: var(--dorado); line-height: 1.15; font-variant-numeric: tabular-nums; }
+#reloj-t { font-size: 12px; line-height: 1.35; }
+.guia { max-width: 100%; display: flex; align-items: center; gap: 8px; background: var(--head); border: 1px solid var(--turquesa); border-radius: 999px; padding: 6px 14px 6px 6px; color: var(--titulo); font-size: 13px; cursor: pointer; text-align: left; }
+.guia[hidden] { display: none; }
+.guia .flecha { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--acento); color: #fff; flex: none; transition: transform .4s; }
+#guia-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.herr { position: absolute; z-index: 1000; top: 10px; right: 10px; display: grid; gap: 6px; justify-items: end; }
+.herr .pill { background: var(--head); min-height: 40px; padding: 6px 13px; font-size: 13px; }
+.herr .pill[aria-pressed="true"] { background: var(--acento); }
+.aviso-hotel { position: absolute; z-index: 1001; left: 10px; right: 10px; bottom: 14px; background: var(--acento); color: #fff; border-radius: 14px; padding: 10px 14px; font-size: 15px; }
+
+/* Cartas de nivel */
+.niveles { display: flex; gap: 10px; overflow-x: auto; padding: 10px 12px max(10px, env(safe-area-inset-bottom)); background: var(--head); border-top: 1px solid var(--line); scroll-snap-type: x mandatory; scrollbar-width: none; }
+.niveles::-webkit-scrollbar { display: none; }
+.carta { flex: none; width: 200px; display: grid; grid-template-rows: auto auto; text-align: left; padding: 0; background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; color: var(--texto); cursor: pointer; scroll-snap-align: center; transition: border-color .2s, transform .2s; }
+.carta.centro { border-color: var(--dorado); }
+.carta.sig { border-color: var(--turquesa); }
+.carta { position: relative; }
+.ahora-t { display: none; position: absolute; right: 8px; top: 8px; padding: 2px 9px; border-radius: 999px; background: #1d63c4; color: #fff; font-size: 12px; font-weight: 500; }
+.carta.ahora .ahora-t { display: block; }
+.carta.ahora.ok .ahora-t { right: 44px; }
+.carta-ilu { position: relative; display: block; height: 96px; }
+.carta-ilu svg, .hoja-hero svg, .portada-ilu svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.chip { position: absolute; left: 8px; top: 8px; background: var(--head); color: var(--titulo); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.sello { position: absolute; right: 8px; top: 8px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--dorado); color: var(--head); }
+.sello.grande { width: 44px; height: 44px; right: 60px; top: 12px; }
+.carta-txt { display: grid; gap: 4px; padding: 9px 12px 11px; }
+.carta-txt strong { color: var(--titulo); font-weight: 500; font-size: 15px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.marcas2 { display: inline-flex; gap: 4px; }
+.mm { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); color: var(--muted); }
+.mm .i { width: 13px; height: 13px; }
+.mm.on { background: var(--dorado); border-color: var(--dorado); color: var(--head); }
+.carta-pie { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.nv { font-size: 12px; white-space: nowrap; }
+.nv3 { color: var(--dorado); }
+.nv2 { color: var(--turquesa-txt); }
+.nv1 { color: var(--muted); }
+
+/* Hoja de nivel / trofeos */
+.hoja { width: min(640px, 100%); max-height: 92svh; margin: auto auto 0; padding: 0; border: 1px solid var(--line); border-bottom: 0; border-radius: 24px 24px 0 0; background: var(--head); color: var(--texto); overflow-y: auto; overscroll-behavior: contain; }
+.hoja::backdrop { background: rgba(5, 12, 18, .75); }
+.hoja-hero { position: relative; height: 190px; }
+.hoja-hero .chip { top: auto; bottom: 12px; left: 16px; font-size: 13px; padding: 3px 12px; }
+.cerrar { position: absolute; top: 12px; right: 12px; }
+.hoja-cuerpo { display: grid; gap: 12px; padding: 18px 18px 22px; }
+.hoja-cuerpo h2 { font-size: 26px; line-height: 1.15; }
+.hoja-cuerpo p { max-width: 62ch; }
+.tipo { font-size: 14px; color: var(--muted); }
+.tipo .i { color: var(--dorado); margin-right: 6px; }
+.lugar { color: var(--turquesa-txt); }
+.relato { font-size: 17px; line-height: 1.65; }
+.nota { color: var(--muted); font-size: 14px; }
+.punto { display: flex; align-items: center; gap: 10px; font-size: 19px; margin-top: 6px; }
+.punto::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--dorado); flex: none; }
+.misiones { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.mision { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+.mision.hecha { border-color: var(--acento); }
+.mision-c { display: grid; gap: 8px; justify-items: start; }
+.mision-t { display: flex; justify-content: space-between; gap: 8px; width: 100%; }
+.mision-t strong { color: var(--titulo); font-weight: 500; }
+.gana { color: var(--dorado); font-size: 13px; font-weight: 500; white-space: nowrap; }
+.hecho-t { display: flex; align-items: center; gap: 6px; color: var(--turquesa-txt); font-weight: 500; }
+.foto { width: 100%; max-height: 260px; object-fit: cover; border-radius: 14px; border: 1px solid var(--line); }
+.acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.opciones { display: grid; gap: 8px; }
+.opcion { display: grid; gap: 2px; text-align: left; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 11px 14px; color: var(--texto); font-size: 14px; line-height: 1.45; cursor: pointer; }
+.opcion strong { color: var(--titulo); font-weight: 500; font-size: 15px; }
+.opcion .zona { color: var(--muted); font-size: 13px; }
+.opcion em { color: var(--dorado); font-style: normal; font-size: 13px; }
+.opcion[aria-pressed="true"] { border-color: var(--dorado); }
+.ver { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.ver li::marker { color: var(--dorado); }
+.dorado-t { color: var(--dorado); font-weight: 500; }
+.modos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.modo { display: grid; gap: 2px; text-align: left; padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; color: var(--texto); cursor: pointer; }
+.modo strong { color: var(--titulo); font-weight: 500; font-size: 17px; }
+.modo span { color: var(--dorado); font-size: 13px; font-variant-numeric: tabular-nums; }
+.modo small { color: var(--muted); font-size: 12px; line-height: 1.35; }
+.modo[aria-pressed="true"] { border-color: var(--turquesa); box-shadow: inset 0 0 0 1px var(--turquesa); }
+.res-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.res-reloj { display: flex; align-items: center; gap: 14px; padding: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+.res-reloj svg { width: 64px; height: 64px; flex: none; transform: rotate(-90deg); }
+.res-reloj time { font-size: 30px; font-weight: 300; color: var(--dorado); font-variant-numeric: tabular-nums; }
+.xp.grande { height: 8px; }
+.itin { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.itin li { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px; padding: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+.itin li.ahora { border-color: #2F8CFF; }
+.itin li.fin { color: var(--muted); }
+.itin input[type="time"] { width: 88px; min-height: 44px; padding: 4px 6px; background: var(--head); border: 1px solid var(--line); border-radius: 10px; color: var(--dorado); font-size: 16px; font-variant-numeric: tabular-nums; color-scheme: dark; }
+.itin-h { width: 88px; text-align: center; color: var(--dorado); font-variant-numeric: tabular-nums; }
+.itin-n { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 0; background: none; border: 0; color: var(--titulo); text-align: left; cursor: pointer; }
+.itin-n > span { display: grid; min-width: 0; }
+.itin-n strong { font-weight: 500; font-size: 15px; line-height: 1.25; }
+.itin-n small { color: var(--muted); font-size: 12px; }
+.est-ok { display: flex; align-items: center; gap: 4px; color: var(--turquesa-txt); font-size: 13px; }
+.est-ok .i { width: 15px; height: 15px; }
+.est-pen { color: var(--muted); font-size: 13px; }
+.itin li.ahora .est-pen { color: #6fb0ff; }
+@media (max-width: 380px) { .itin input[type="time"] { width: 80px; } }
+.enlace-reloj { padding: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; color: var(--turquesa-txt); font-size: 14px; overflow-wrap: anywhere; user-select: all; }
+.horario { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.horario button { display: grid; grid-template-columns: 52px 46px minmax(0, 1fr); align-items: center; gap: 8px; width: 100%; min-height: 50px; padding: 2px 0; background: none; border: 0; color: var(--titulo); text-align: left; cursor: pointer; }
+.horario time { font-variant-numeric: tabular-nums; color: var(--dorado); font-weight: 500; }
+.horario .mk { justify-self: center; }
+.hoja-pie { position: sticky; bottom: 0; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 12px 16px max(14px, env(safe-area-inset-bottom)); background: var(--head); border-top: 1px solid var(--line); }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stats span { display: grid; justify-items: center; gap: 2px; padding: 10px 4px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; font-size: 12px; color: var(--muted); }
+.stats strong { color: var(--dorado); font-size: 18px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.insignias { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px; }
+.insignia { display: grid; justify-items: center; gap: 6px; padding: 10px 4px; background: none; border: 0; color: var(--muted); text-align: center; cursor: pointer; }
+span.insignia { cursor: default; }
+.insignia small { font-size: 12px; line-height: 1.3; }
+.insignia.ok small { color: var(--titulo); }
+.insignia .mk { width: 52px; height: 52px; }
+.insignia:not(.ok) .mk { border-color: var(--line); color: var(--muted); }
+.album { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.album figure { margin: 0; display: grid; gap: 4px; }
+.album img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); }
+.album figcaption { font-size: 12px; color: var(--muted); }
+.creditos { font-size: 12px; }
+
+/* Mis rutas: cuadro de mando inicial */
+.rutas { position: fixed; inset: 0; z-index: 4200; overflow-y: auto; background: var(--bg); padding: max(16px, env(safe-area-inset-top)) 18px max(24px, env(safe-area-inset-bottom)); }
+.rutas[hidden] { display: none; }
+.rutas-caja { max-width: 1100px; margin: 0 auto; display: grid; gap: 16px; }
+.rutas-cab { display: flex; align-items: center; gap: 14px; }
+.rutas-logo { width: 76px; height: 76px; flex: none; }
+.rutas-cab h1 { font-size: clamp(30px, 8vw, 44px); line-height: 1.05; }
+.rutas-cab .sub { font-size: 15px; }
+.tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; align-items: start; }
+.tarjeta { display: grid; background: var(--card); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; }
+.tarjeta.toca { border-color: var(--bandera); box-shadow: 0 0 0 1px var(--bandera); }
+.tarjeta.pronto .tarjeta-ilu { opacity: .7; }
+.tarjeta-ilu { position: relative; height: 150px; }
+.tarjeta-ilu svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.toca-t { left: auto; right: 8px; background: var(--bandera); color: var(--head); border-color: var(--bandera); font-weight: 500; }
+.tarjeta-c { display: grid; gap: 8px; padding: 14px 16px 16px; }
+.tarjeta-c h3 { font-size: 21px; line-height: 1.2; }
+.lugares { display: flex; flex-wrap: wrap; gap: 6px; }
+.lugares span { padding: 2px 10px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; color: var(--titulo); }
+
+/* Portada */
+.portada { position: fixed; inset: 0; z-index: 4000; overflow-y: auto; background: var(--bg); padding: max(16px, env(safe-area-inset-top)) 18px max(20px, env(safe-area-inset-bottom)); }
+.portada[hidden] { display: none; }
+.portada-caja { max-width: 520px; margin: 0 auto; display: grid; gap: 14px; }
+.portada-ilu { position: relative; height: 200px; border-radius: 20px; overflow: hidden; border: 1px solid var(--line); }
+.portada-logo { width: 112px; height: 112px; margin: -70px 0 -6px 14px; position: relative; }
+.portada h1 { font-size: clamp(38px, 10vw, 52px); line-height: 1.05; }
+.fecha { color: var(--dorado); font-size: 14px; }
+.sub { color: var(--muted); font-size: 17px; }
+.como { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.como li { display: flex; align-items: center; gap: 12px; }
+.equipo { display: grid; gap: 10px; }
+.jugadores { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 10px; }
+.jug { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.equipo input { min-height: 46px; padding: 8px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; color: var(--titulo); font-size: 16px; }
+.equipo button { grid-column: 1 / -1; }
+
+/* Premios */
+.premio { position: fixed; left: 50%; top: 32%; z-index: 5000; display: grid; justify-items: center; gap: 4px; padding: 16px 26px; background: var(--head); border: 1.3px solid var(--dorado); border-radius: 22px; transform: translate(-50%, -50%) scale(.6); opacity: 0; pointer-events: none; transition: transform .25s, opacity .25s; text-align: center; max-width: calc(100% - 40px); }
+.premio strong { color: var(--dorado); font-size: 30px; font-weight: 700; }
+.premio span { color: var(--titulo); font-size: 15px; }
+.premio.ver { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.premio.grande strong { font-size: 40px; }
+.confeti { position: fixed; inset: 0; z-index: 4900; pointer-events: none; overflow: hidden; }
+.confeti i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px; animation: caer 2s linear forwards; }
+@keyframes caer { to { transform: translateY(105vh) rotate(540deg); } }
+.toast { position: fixed; left: 50%; bottom: calc(210px + env(safe-area-inset-bottom)); z-index: 3000; transform: translate(-50%, 12px); opacity: 0; max-width: calc(100% - 32px); background: var(--head); color: var(--titulo); border: 1px solid var(--turquesa); border-radius: 999px; padding: 10px 18px; font-size: 14px; pointer-events: none; transition: opacity .2s, transform .2s; text-align: center; }
+.toast.ver { opacity: 1; transform: translate(-50%, 0); }
+
+/* Capas */
+.herr .pill { position: relative; }
+.sw { display: inline-grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; border: 1.3px solid var(--dorado); }
+.sw i { width: 7px; height: 7px; border-radius: 50%; }
+.sw[data-b="azul"] { background: #1a2b3d; }
+.sw[data-b="calle"] { background: #f2efe9; }
+.sw[data-b="calle"] i { background: rgba(23, 45, 67, .35); }
+.sw[data-b="relieve"] { background: #c9bd96; }
+.sw[data-b="relieve"] i { background: #8a7d57; }
+.sw[data-b="satelite"] { background: #3f5236; }
+.sw[data-b="satelite"] i { background: #8fa36b; }
+.sw-mini { position: absolute; right: -3px; bottom: -3px; width: 14px; height: 14px; border-width: 1px; }
+.sw-mini i { width: 4px; height: 4px; }
+.menu-capas { position: absolute; z-index: 1002; top: 10px; right: 128px; display: grid; gap: 2px; min-width: 176px; padding: 8px; background: var(--head); border: 1px solid var(--line); border-radius: 16px; }
+.menu-capas[hidden] { display: none; }
+.menu-t { padding: 4px 10px 6px; font-size: 12px; color: var(--muted); }
+.menu-capas button { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 6px 10px; background: none; border: 0; border-radius: 10px; color: var(--titulo); font-size: 15px; text-align: left; cursor: pointer; }
+.menu-capas button[aria-pressed="true"] { background: var(--card); color: var(--dorado); }
+
+/* Leaflet en tono JO, autor y escala como en Mis viajes */
+.leaflet-container { background: #0d1b29; font-family: Roboto, sans-serif; }
+.mapa-pie .leaflet-control-attribution { margin: 0; padding: 2px 6px; background: var(--head); color: var(--muted); font-size: 10px; line-height: 1.3; border-top-left-radius: 6px; max-width: calc(100vw - 130px); text-align: right; }
+.mapa-pie .leaflet-control-attribution a { color: var(--muted); }
+.mapa-pie .leaflet-control-attribution b { color: var(--titulo); font-weight: 500; }
+.leaflet-control-scale-line { padding: 0 2px; border: 0; border-bottom: 1px solid #aab6c2; background: none; color: #aab6c2; font-size: 11px; }
+.base-clara .leaflet-control-scale-line { border-color: #3b4a5a; color: #3b4a5a; }
+
+@media (min-width: 900px) {
+  .carta { width: 230px; }
+  .carta-ilu { height: 116px; }
+  .hoja { margin: auto; border-bottom: 1px solid var(--line); border-radius: 24px; max-height: 88svh; }
+  .hoja-hero { height: 230px; }
+}
+@media (max-width: 360px) {
+  .hud { gap: 8px; padding-inline: 10px; }
+  .banderas { padding: 0 9px; }
+  .logo { width: 42px; height: 42px; }
+  .carta { width: 176px; }
+  .modos { grid-template-columns: 1fr; }
+}
+@media (hover: hover) {
+  .pill:hover:not(:disabled), .opcion:hover, .redondo:hover, .norte:hover, .guia:hover, .modo:hover, .menu-capas button:hover, .reloj:hover, .banderas:hover { border-color: var(--turquesa); }
+  .carta:hover { transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk, .toast, .guia .flecha, .carta, .premio, .xp span { transition: none; }
+  .mk.sig, .yo.gps .yo-punto, .reloj.ultimos .arco { animation: none; }
+  .arco, .norte svg, #mapa.anim-giro, #mapa.anim-giro .leaflet-marker-icon > * { transition: none; }
+}
+
+</style>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true">
+  <symbol id="i-monumento" viewBox="0 0 24 24"><path d="M3 20h18M5 17h14M6 17V10M10 17V10M14 17V10M18 17V10M4 10h16L12 4z"/></symbol>
+  <symbol id="i-comida" viewBox="0 0 24 24"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 21V3c-2 1-3 4-3 8h3"/></symbol>
+  <symbol id="i-paseo" viewBox="0 0 24 24"><path d="M3 17c3-4 6-4 9 0s6 4 9 0M3 11c3-4 6-4 9 0s6 4 9 0"/></symbol>
+  <symbol id="i-hotel" viewBox="0 0 24 24"><path d="M3 19V6M3 15h18v4M21 15v-3a3 3 0 0 0-3-3h-7v6"/><circle cx="7" cy="11.5" r="1.8"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-flecha" viewBox="0 0 24 24"><path d="M12 3l6 17-6-4-6 4z"/></symbol>
+  <symbol id="i-cerrar" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-ruta" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h6"/></symbol>
+  <symbol id="i-capas" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5zM3 12.5l9 5 9-5M3 17l9 5 9-5"/></symbol>
+  <symbol id="i-reloj-arena" viewBox="0 0 24 24"><path d="M6 3h12M6 21h12M7 3c0 5 10 6 10 9s-10 4-10 9M17 3c0 5-10 6-10 9s10 4 10 9"/></symbol>
+  <symbol id="i-gps" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+  <symbol id="i-camara" viewBox="0 0 24 24"><path d="M3 7h3l2-3h8l2 3h3v12H3z"/><circle cx="12" cy="13" r="4"/></symbol>
+  <symbol id="i-trofeo" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4a3 3 0 0 0 4 4M16 6h4a3 3 0 0 1-4 4M12 13v4M8 20h8M9 17h6v3H9z"/></symbol>
+  <symbol id="i-candado" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-bandera" viewBox="0 0 24 24"><circle cx="8" cy="3.6" r="1.4"/><path d="M8 5v14M9.5 5.5l9 3.5-9 3.5z"/><ellipse cx="8" cy="20" rx="4" ry="1.6"/></symbol>
+  <symbol id="i-siguiente" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-reiniciar" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4"/></symbol>
+</svg>
+
+<header class="hud">
+  <button type="button" class="logo-btn" id="b-logo" aria-label="Mis rutas"><img class="logo" src="logo.png" width="52" height="52" alt="Logo de Mi Ruta"></button>
+  <div class="hud-centro">
+    <h1 class="marca">Mi Ruta</h1>
+    <p class="hud-linea"><span id="hud-equipo">Conquista Toulouse</span> · <strong id="hud-rango">Turistas</strong></p>
+    <div class="xp"><span id="hud-barra"></span></div>
+    <p class="hud-xp" id="hud-xp">0 XP</p>
+  </div>
+  <button type="button" class="banderas" data-hoja="resumen" aria-label="Resumen del itinerario"><svg class="i" aria-hidden="true"><use href="#i-bandera"/></svg><span id="hud-ban">0/9</span><span class="ban-t">Resumen</span></button>
+  <button type="button" class="redondo dorado" data-hoja="logros" aria-label="Trofeos y álbum"><svg class="i" aria-hidden="true"><use href="#i-trofeo"/></svg></button>
+</header>
+
+<main class="mapa-zona">
+  <div id="mapa" aria-label="Mapa del juego"></div>
+  <button type="button" class="m-logo" id="m-logo" aria-label="Ver toda la ruta"><img src="logo.png" width="72" height="72" alt=""></button>
+  <div class="panel-izq">
+    <button type="button" class="reloj" data-hoja="resumen" aria-label="Resumen: cómo vais"><svg class="reloj-svg" viewBox="0 0 40 40" aria-hidden="true"><circle class="fondo" cx="20" cy="20" r="15.9"/><circle class="arco" id="reloj-anillo" cx="20" cy="20" r="15.9" pathLength="100"/></svg><span class="reloj-c"><time id="reloj-h">--:--</time><span id="reloj-t"></span></span></button>
+    <button type="button" class="guia" id="guia" hidden><span class="flecha" id="guia-flecha"><svg class="i" aria-hidden="true"><use href="#i-flecha"/></svg></span><span id="guia-t">Buscando GPS…</span></button>
+  </div>
+  <div class="herr">
+    <button type="button" class="pill" id="b-ruta"><svg class="i" aria-hidden="true"><use href="#i-ruta"/></svg>Ruta</button>
+    <button type="button" class="pill" id="b-capas" aria-haspopup="true" aria-expanded="false" aria-controls="menu-capas"><svg class="i" aria-hidden="true"><use href="#i-capas"/></svg>Capas<span class="sw sw-mini" data-b="azul" aria-hidden="true"><i></i></span></button>
+    <button type="button" class="pill" id="b-sigue" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-gps"/></svg><span>Sígueme</span></button>
+  </div>
+  <div class="menu-capas" id="menu-capas" hidden></div>
+  <div class="norte-caja">
+    <button type="button" class="norte" id="norte" aria-label="Norte arriba"><svg viewBox="0 0 40 40" aria-hidden="true"><path class="aguja-n" d="M20 3l4 6h-8z"/><text x="20" y="28">N</text></svg></button>
+  </div>
+  <div class="mapa-pie"><div id="mapa-escala"></div><div id="mapa-creditos"></div></div>
+  <p class="aviso-hotel" id="aviso-hotel" hidden>Toca el mapa donde está el hotel · <button type="button" class="enlace" id="b-cancelar">Cancelar</button></p>
+</main>
+
+<nav class="niveles" id="niveles" aria-label="Niveles del juego"></nav>
+
+<section class="rutas" id="rutas" aria-labelledby="rutas-t">
+  <div class="rutas-caja">
+    <header class="rutas-cab">
+      <img class="rutas-logo" src="logo.png" width="76" height="76" alt="Logo de Mi Ruta">
+      <div><h1 id="rutas-t">Mi Ruta</h1><p class="sub" id="rutas-hoy"></p></div>
+    </header>
+    <h2 class="punto">Mis rutas</h2>
+    <div class="tarjetas" id="tarjetas"></div>
+    <p class="nota creditos">Autor: Juan Felipe Olivar Londoño · Cada viaje es una ruta: la app os propone la que toca según la fecha.</p>
+  </div>
+</section>
+
+<section class="portada" id="portada" aria-labelledby="portada-t" hidden>
+  <div class="portada-caja">
+    <div class="portada-ilu" id="portada-ilu"></div>
+    <img class="portada-logo" src="logo.png" width="112" height="112" alt="Logo de Mi Ruta">
+    <p class="fecha">Sábado 21 de noviembre · Toulouse</p>
+    <h1 id="portada-t">Conquista Toulouse</h1>
+    <p class="sub" id="portada-sub">Vuestro itinerario de hoy convertido en juego. Elegid la ruta completa o la exprés. Concierto a las 20:00.</p>
+    <ul class="como">
+      <li><span class="yo-demo"><svg class="yo-bandera" viewBox="0 0 26 34" aria-hidden="true"><path class="mastil" d="M9 31V5"/><circle class="pomo" cx="9" cy="4" r="2.4"/><path class="tela" d="M10.5 6.5L24 11.5 10.5 16.5z"/></svg><span class="yo-punto"></span></span>El punto azul que se mueve sois vosotros llevando la bandera. Al entrar en el círculo de cada parada se pone OK.</li>
+      <li><span class="mk n2 ruta"><svg class="i" aria-hidden="true"><use href="#i-camara"/></svg></span>En cada una, un reto rápido: una foto divertida o probar algo.</li>
+      <li><span class="mk n3 ruta">3</span>Los círculos grandes son las prioridades del PDF.</li>
+      <li><span class="mk n2 ok"><svg class="i" aria-hidden="true"><use href="#i-bandera"/></svg></span>Al hacer el reto, plantáis vuestra bandera y coronáis el nivel.</li>
+    </ul>
+    <div id="portada-modos"></div>
+    <form class="equipo" id="form-portada">
+      <div class="jugadores" id="jugadores"></div>
+      <button type="submit" class="pill activa grande">Empezar aventura</button>
+    </form>
+  </div>
+</section>
+
+<dialog class="hoja" id="hoja" aria-labelledby="hoja-t"></dialog>
+<div class="premio" id="premio" aria-live="polite"></div>
+<div class="confeti" id="confeti" aria-hidden="true"></div>
+<p class="toast" id="toast" role="status" aria-live="polite"></p>
+
+<script src="leaflet.js"></script>
+<script>
+/* ====== RUTA DE MAÑANA · Toulouse en pareja (solo lo del PDF) ======
+   nivel: 3 imprescindible (prioridad del PDF) · 2 recomendado · 1 si da tiempo */
+var RUTA = {
+  id: 'toulouse-pareja',
+  titulo: 'Toulouse en pareja',
+  juego: 'Conquista Toulouse',
+  ciudad: 'Toulouse',
+  fecha: '2026-11-21',
+  fechaTexto: 'Sábado 21 de noviembre',
+  inicio: '11:00',
+  fin: '18:00',
+  nota: 'Concierto a las 20:00',
+  idea: 'Un recorrido a pie por el centro histórico, con patrimonio, gastronomía francesa y rincones con encanto. Ritmo tranquilo.',
+  centro: [43.6025, 1.4420],
+  epilogo: { hora: '20:00', titulo: 'Concierto', texto: 'Que disfrutéis de Toulouse, de la buena comida y, sobre todo, del concierto. Bon voyage!' },
+  consejos: [
+    'Llevad calzado cómodo: el recorrido está pensado para hacerse caminando.',
+    'Comprobad los horarios de la basílica, el Capitole, el mercado y el Couvent des Jacobins: pueden variar según el día.',
+    'Si vais justos de tiempo, priorizad Saint-Sernin, Capitole, Jacobins y el paseo por el Garona (los círculos grandes).',
+    'Como profesionales del turismo, fijaos en la oferta gastronómica, los espacios de eventos y los establecimientos con encanto.'
+  ],
+  paradas: [
+    { id: 'desayuno', hora: '10:00', nombre: 'Desayuno', tipo: 'comida', nivel: 2, dur: '45 min',
+      texto: 'Empezad el día con calma: un buen desayuno antes de salir hacia Saint-Sernin.' },
+    { id: 'saint-sernin', hora: '11:00', nombre: 'Basílica de Saint-Sernin', tipo: 'monumento', nivel: 3, lat: 43.60845, lng: 1.44200, dur: '25–35 min',
+      texto: 'Una de las grandes joyas románicas de Europa, vinculada al Camino de Santiago. Fijaos en su arquitectura de ladrillo rosa.' },
+    { id: 'capitole', hora: '11:40', nombre: 'Place du Capitole', tipo: 'monumento', nivel: 3, lat: 43.60440, lng: 1.44370, dur: '35 min',
+      texto: 'El corazón de Toulouse: una plaza monumental rodeada de terrazas y calles comerciales. Si está abierto, entrad al Capitole a ver sus salas.' },
+    { id: 'victor-hugo', hora: '12:15', nombre: 'Mercado Victor Hugo', tipo: 'comida', nivel: 2, lat: 43.60580, lng: 1.44800, dur: '45 min',
+      texto: 'Productos del suroeste francés: quesos, foie gras, embutidos, productos regionales y repostería. Arriba hay restaurantes.' },
+    { id: 'comida', hora: '13:00', nombre: 'Comida en el centro', tipo: 'comida', nivel: 2, eleccion: true, dur: '1 h 15 min',
+      texto: 'Elegid una de las tres propuestas según el ambiente que os apetezca. Comprobad horarios y disponibilidad el mismo día.' },
+    { id: 'jacobins', hora: '14:15', nombre: 'Couvent des Jacobins', tipo: 'monumento', nivel: 3, lat: 43.60360, lng: 1.44010, dur: '30–45 min',
+      texto: 'Un conjunto gótico espectacular. Lo más famoso es su columna central, con forma de palmera.' },
+    { id: 'assezat', hora: '15:15', nombre: 'Hôtel d’Assézat y Les Carmes', tipo: 'paseo', nivel: 2, lat: 43.60065, lng: 1.44080, dur: '1 h',
+      texto: 'Joya renacentista con un patio precioso, sede de la Fundación Bemberg. Después, callejead por Les Carmes: tiendas independientes, plazuelas y cafés.' },
+    { id: 'daurade', hora: '16:15', nombre: 'Place de la Daurade y Pont Neuf', tipo: 'paseo', nivel: 3, lat: 43.60150, lng: 1.43870, dur: '45 min',
+      texto: 'Pasead junto al Garona desde la Place de la Daurade hasta el Pont Neuf, uno de los puentes más representativos de Toulouse. Zona estupenda para fotos.' },
+    { id: 'cafe', hora: '17:00', nombre: 'Café, dulce y paseo final', tipo: 'comida', nivel: 1, lat: 43.59990, lng: 1.44150, dur: '1 h',
+      texto: 'Tomad algo sin prisa y buscad las violetas de Toulouse: caramelos y dulces de violeta, uno de los símbolos de la ciudad.' },
+    { id: 'hotel', hora: '18:00', nombre: 'Regreso al hotel', tipo: 'hotel', nivel: 1, dur: '',
+      texto: 'Tiempo para descansar, cambiaros y prepararos tranquilamente para el concierto de las 20:00.' }
+  ],
+  comidas: [
+    { id: 'emile', nombre: 'Restaurant Émile', zona: 'Place Saint-Georges', lat: 43.60010, lng: 1.44830,
+      texto: 'Cocina francesa tradicional y ambiente ideal en pareja. Plato a buscar: el cassoulet.', porque: 'Si os apetece una comida especial.' },
+    { id: 'bibent', nombre: 'Le Bibent', zona: 'Place du Capitole', lat: 43.60420, lng: 1.44430,
+      texto: 'Brasserie francesa con un espectacular interior Belle Époque.', porque: 'Para comer en un lugar emblemático.' },
+    { id: 'bistroquet', nombre: 'Bistroquet', zona: 'Rue Labéda', lat: 43.60330, lng: 1.44700,
+      texto: 'Más informal: cocina francesa y tapas o platos para compartir.', porque: 'Si preferís algo desenfadado.' }
+  ]
+};
+
+/* ====== EL JUEGO ======
+   En cada nivel: llegar al sitio y hacer un reto rápido.
+   expres: hora del nivel en la ruta exprés (solo las prioridades del PDF). */
+var JUEGO = {
+  desayuno: { insignia: 'Buenos días', expres: '10:00', reto: 'Foto del primer café (o croissant) del día.' },
+  'saint-sernin': { insignia: 'Peregrinos', expres: '11:00', reto: 'Foto «sujetando» el campanario con la mano, jugando con la perspectiva.' },
+  capitole: { insignia: 'Capitole', expres: '11:40', reto: 'Foto de un salto juntos en mitad de la plaza.' },
+  'victor-hugo': { insignia: 'Gourmets', reto: 'Probad algo del mercado que no hayáis comido nunca.' },
+  comida: { insignia: 'Cassoulet', expres: '12:15', reto: 'Brindis y foto del plato antes del primer bocado.' },
+  jacobins: { insignia: 'Palmera', expres: '13:45', reto: 'Foto en vertical de la columna palmera, desde justo debajo.' },
+  assezat: { insignia: 'Les Carmes', reto: 'Entrad en la tienda más curiosa que encontréis en Les Carmes.' },
+  daurade: { insignia: 'Garona', expres: '14:40', reto: 'Foto juntos con el Garona y el Pont Neuf detrás.' },
+  cafe: { insignia: 'Violetas', reto: 'Probad un caramelo o dulce de violeta.' },
+  hotel: { insignia: 'Listos', expres: '15:30', reto: 'Foto arreglados para el concierto.' }
+};
+var RANGOS = [[0, 'Turistas'], [150, 'Paseantes'], [300, 'Exploradores'], [450, 'Toulousains'], [600, 'Leyendas rosas']];
+
+/* ====== MIS RUTAS · cuadro de mando inicial ======
+   Cada viaje es una tarjeta. lista: true = ya se puede jugar; false = próximamente.
+   Para añadir un viaje: copia una tarjeta, cambia fechas y textos. */
+var CATALOGO = [
+  { id: 'toulouse-pareja', lista: true, nombre: 'Conquista Toulouse', lugares: ['Toulouse'], desde: '2026-11-21', hasta: '2026-11-21', fechas: 'Sábado 21 de noviembre de 2026', ilu: 'portada',
+    texto: 'Un día a pie por el centro histórico: Saint-Sernin, el Capitole, los Jacobins y el Garona. Concierto a las 20:00.' },
+  { id: 'valladolid-leon', lista: false, nombre: 'Valladolid y León', lugares: ['Valladolid', 'León'], desde: '2026-12-05', hasta: '2026-12-09', fechas: 'Del 5 al 9 de diciembre de 2026', ilu: 'leon',
+    texto: 'Cinco días por Castilla y León: el centro de Valladolid y la León de la catedral, las tapas y el barrio Húmedo.' },
+  { id: 'milan-alpes', lista: false, nombre: 'Milán, Lugano, Como y Bernina Express', lugares: ['Milán', 'Lugano', 'Como', 'Bernina Express', 'Navigli'], desde: '2026-12-27', hasta: '2026-12-31', fechas: 'Del 27 al 31 de diciembre de 2026', ilu: 'alpes',
+    texto: 'Milán, Lugano y el lago de Como, el tren Bernina Express entre montañas nevadas y despedida del año en los Navigli: aperol, tardeo y Nochevieja.' }
+];
+
+/* ====== ILUSTRACIONES (SVG propias, estilo videojuego plano) ====== */
+var ILU = (function () {
+  var C = { cielo: '#13263a', noche: '#0b1722', suelo: '#0f1e2d', lad: '#c99a4e', lad2: '#a87a35', lad3: '#8C6D24', oro: '#D6AD55', tq: '#1DA0AB', tq2: '#14808A', bl: '#e8eef4', gr: '#9fb0c0', vi: '#a98bdb' };
+  var marco = function (dentro, fondo) {
+    return '<svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="320" height="180" fill="' + (fondo || C.cielo) + '"/>' +
+      '<g fill="' + C.oro + '" opacity=".7"><circle cx="34" cy="24" r="1.4"/><circle cx="92" cy="14" r="1"/><circle cx="268" cy="20" r="1.4"/><circle cx="296" cy="44" r="1"/><circle cx="180" cy="10" r="1"/></g>' + dentro + '</svg>';
+  };
+  var arcos = function (x, y, n, w, h, sep, color) {
+    var s = '';
+    for (var i = 0; i < n; i++) s += '<rect x="' + (x + i * sep) + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (w / 2) + '" fill="' + (color || C.noche) + '"/>';
+    return s;
+  };
+  var sernin = function () {
+    var t = '', ws = [76, 64, 52, 42, 32], y = 122;
+    ws.forEach(function (w, i) { y -= 17; t += '<rect x="' + (160 - w / 2) + '" y="' + y + '" width="' + w + '" height="17" fill="' + (i % 2 ? C.lad : C.lad2) + '"/>' + arcos(160 - w / 2 + 5, y + 4, Math.floor((w - 6) / 10), 5, 10, 10); });
+    return '<rect x="40" y="118" width="240" height="44" fill="' + C.lad2 + '"/><path d="M40 118l20-16h200l20 16z" fill="' + C.lad3 + '"/>' + arcos(52, 128, 22, 6, 14, 10) +
+      t + '<path d="M144 37L160 4l16 33z" fill="' + C.lad3 + '"/><rect x="159" y="0" width="2" height="8" fill="' + C.oro + '"/>' +
+      '<rect y="160" width="320" height="20" fill="' + C.suelo + '"/>';
+  };
+  var capitole = function () {
+    var col = '';
+    for (var i = 0; i < 8; i++) col += '<rect x="' + (124 + i * 10) + '" y="74" width="5" height="52" fill="' + C.bl + '" opacity=".9"/>';
+    return '<rect x="20" y="70" width="280" height="62" fill="' + C.lad + '"/><rect x="20" y="64" width="280" height="8" fill="' + C.lad3 + '"/>' +
+      '<path d="M116 64l44-22 44 22z" fill="' + C.lad2 + '"/><rect x="116" y="70" width="88" height="62" fill="' + C.lad2 + '"/>' + col +
+      arcos(30, 84, 8, 8, 16, 11, C.noche) + arcos(214, 84, 8, 8, 16, 11, C.noche) + arcos(30, 110, 8, 8, 16, 11, C.noche) + arcos(214, 110, 8, 8, 16, 11, C.noche) +
+      '<rect x="159" y="20" width="2" height="24" fill="' + C.gr + '"/><path d="M161 20h18l-4 5 4 5h-18z" fill="' + C.tq + '"/>' +
+      '<rect y="132" width="320" height="48" fill="' + C.suelo + '"/><ellipse cx="160" cy="156" rx="70" ry="14" fill="none" stroke="' + C.oro + '" stroke-width="1.5"/>' +
+      '<path d="M160 144v24M120 156h80" stroke="' + C.oro + '" stroke-width="3"/><g fill="' + C.oro + '"><circle cx="120" cy="156" r="2.5"/><circle cx="200" cy="156" r="2.5"/><circle cx="160" cy="143" r="2.5"/><circle cx="160" cy="169" r="2.5"/></g>';
+  };
+  var mercado = function () {
+    var tol = '';
+    for (var i = 0; i < 10; i++) tol += '<path d="M' + (20 + i * 28) + ' 60h28l-4 26h-20z" fill="' + (i % 2 ? C.oro : C.tq) + '"/>';
+    return '<rect x="14" y="40" width="292" height="22" fill="' + C.lad2 + '"/><text x="160" y="56" text-anchor="middle" font-family="Roboto,sans-serif" font-size="13" font-weight="500" fill="' + C.bl + '" letter-spacing="3">MARCHÉ</text>' + tol +
+      '<rect x="20" y="118" width="280" height="40" fill="' + C.lad3 + '"/><rect x="20" y="114" width="280" height="6" fill="' + C.oro + '"/>' +
+      '<g fill="' + C.oro + '"><path d="M40 114l26-18v18z"/><circle cx="96" cy="106" r="9"/><circle cx="114" cy="108" r="7"/></g>' +
+      '<g fill="' + C.lad2 + '"><circle cx="150" cy="106" r="8"/><circle cx="166" cy="108" r="7"/></g>' +
+      '<g stroke="' + C.lad + '" stroke-width="6" stroke-linecap="round"><path d="M214 86v20M230 86v24M246 86v18M262 86v22"/></g><path d="M206 86h64" stroke="' + C.gr + '" stroke-width="2"/>' +
+      '<rect y="158" width="320" height="22" fill="' + C.suelo + '"/>';
+  };
+  var comida = function () {
+    return '<rect y="118" width="320" height="62" fill="' + C.lad3 + '"/><rect y="114" width="320" height="6" fill="' + C.lad2 + '"/>' +
+      '<ellipse cx="160" cy="124" rx="70" ry="10" fill="' + C.noche + '" opacity=".5"/><path d="M100 88h120l-10 34h-100z" fill="' + C.lad2 + '"/><ellipse cx="160" cy="88" rx="60" ry="10" fill="' + C.lad + '"/>' +
+      '<g fill="' + C.oro + '"><circle cx="140" cy="86" r="5"/><circle cx="156" cy="84" r="4"/><circle cx="176" cy="87" r="5"/><rect x="128" y="82" width="22" height="6" rx="3" fill="' + C.lad3 + '"/></g>' +
+      '<g fill="none" stroke="' + C.bl + '" stroke-width="2" stroke-linecap="round" opacity=".7"><path d="M140 70c-6-8 6-12 0-22"/><path d="M160 66c-6-8 6-12 0-22"/><path d="M180 70c-6-8 6-12 0-22"/></g>' +
+      '<g fill="none" stroke="' + C.bl + '" stroke-width="2"><path d="M50 70h22l-4 20a7 7 0 0 1-14 0z"/><path d="M61 97v16M54 113h14"/><path d="M250 70h22l-4 20a7 7 0 0 1-14 0z"/><path d="M261 97v16M254 113h14"/></g>' +
+      '<path d="M55 82h12l-1 7a5 5 0 0 1-10 0zM255 82h12l-1 7a5 5 0 0 1-10 0z" fill="' + C.lad3 + '"/>';
+  };
+  var jacobins = function () {
+    var r = '', i, a;
+    for (i = 0; i < 11; i++) { a = -150 + i * 12; var x = 160 + Math.cos(a * Math.PI / 180) * 140, y = 70 + Math.sin(a * Math.PI / 180) * 60; r += '<path d="M160 70Q' + ((160 + x) / 2) + ' ' + (y - 20) + ' ' + x.toFixed(1) + ' ' + y.toFixed(1) + '" fill="none" stroke="' + C.oro + '" stroke-width="2.5"/>'; }
+    return '<rect width="320" height="180" fill="' + C.lad3 + '" opacity=".35"/>' + r +
+      '<rect x="152" y="68" width="16" height="96" fill="' + C.lad + '"/><rect x="148" y="160" width="24" height="8" fill="' + C.lad2 + '"/>' +
+      '<path d="M32 164V100q14-30 28 0v64z" fill="' + C.tq2 + '" opacity=".8"/><path d="M260 164V100q14-30 28 0v64z" fill="' + C.tq2 + '" opacity=".8"/>' +
+      '<path d="M46 104v56M274 104v56M34 130h24M262 130h24" stroke="' + C.noche + '" stroke-width="2"/><rect y="166" width="320" height="14" fill="' + C.suelo + '"/>';
+  };
+  var assezat = function () {
+    return '<rect x="30" y="40" width="200" height="124" fill="' + C.lad + '"/>' + arcos(42, 58, 5, 22, 36, 38, C.noche) + arcos(42, 110, 5, 22, 40, 38, C.noche) +
+      '<g fill="' + C.bl + '" opacity=".85">' + [38, 76, 114, 152, 190, 226].map(function (x) { return '<rect x="' + (x - 1) + '" y="52" width="5" height="48"/><rect x="' + (x - 1) + '" y="104" width="6" height="56"/>'; }).join('') + '</g>' +
+      '<rect x="30" y="100" width="200" height="5" fill="' + C.lad3 + '"/><rect x="236" y="30" width="54" height="134" fill="' + C.lad2 + '"/><path d="M232 30l31-20 31 20z" fill="' + C.lad3 + '"/>' +
+      arcos(252, 48, 2, 10, 20, 14, C.noche) + arcos(252, 90, 2, 10, 20, 14, C.noche) + '<rect x="254" y="130" width="18" height="34" rx="9" fill="' + C.noche + '"/>' +
+      '<rect y="164" width="320" height="16" fill="' + C.suelo + '"/>';
+  };
+  var pontneuf = function () {
+    var b = '', xs = [[10, 34], [52, 40], [100, 46], [154, 52], [214, 46], [268, 40]];
+    xs.forEach(function (a) { b += '<path d="M' + a[0] + ' 140v-6a' + (a[1] / 2) + ' ' + (a[1] / 2.2) + ' 0 0 1 ' + a[1] + ' 0v6z" fill="' + C.cielo + '"/>'; });
+    return '<rect width="320" height="180" fill="' + C.lad3 + '" opacity=".25"/><circle cx="250" cy="62" r="26" fill="' + C.oro + '"/>' +
+      '<path d="M270 98a22 22 0 0 1 44 0z" fill="' + C.tq + '"/><rect x="270" y="98" width="44" height="14" fill="' + C.lad2 + '"/>' +
+      '<rect y="112" width="320" height="68" fill="' + C.tq2 + '"/><path d="M0 128h320M0 148h320M0 166h320" stroke="' + C.tq + '" stroke-width="2" stroke-dasharray="18 14" opacity=".6"/>' +
+      '<rect x="0" y="96" width="320" height="44" fill="' + C.lad + '"/><rect x="0" y="92" width="320" height="6" fill="' + C.lad2 + '"/>' + b +
+      '<g fill="' + C.noche + '"><circle cx="47" cy="110" r="5"/><circle cx="96" cy="110" r="5"/><circle cx="150" cy="110" r="5"/><circle cx="210" cy="110" r="5"/><circle cx="264" cy="110" r="5"/></g>';
+  };
+  var violetas = function () {
+    var f = function (x, y) { /* flor de violeta: cinco pétalos */
+      var p = '';
+      for (var k = 0; k < 5; k++) p += '<ellipse cx="0" cy="-5" rx="3.2" ry="5" transform="rotate(' + (k * 72) + ')"/>';
+      return '<g transform="translate(' + x + ' ' + y + ')" fill="' + C.vi + '">' + p + '<circle r="2.2" fill="' + C.oro + '"/></g>';
+    };
+    return '<rect y="122" width="320" height="58" fill="' + C.lad3 + '"/><rect y="118" width="320" height="6" fill="' + C.lad2 + '"/>' +
+      '<path d="M72 80h56v30a20 20 0 0 1-20 20h-16a20 20 0 0 1-20-20z" fill="' + C.bl + '"/><path d="M128 88h8a10 10 0 0 1 0 20h-8" fill="none" stroke="' + C.bl + '" stroke-width="5"/>' +
+      '<ellipse cx="100" cy="82" rx="26" ry="5" fill="' + C.lad3 + '"/><g fill="none" stroke="' + C.bl + '" stroke-width="2" opacity=".6" stroke-linecap="round"><path d="M90 66c-5-7 5-10 0-18"/><path d="M106 64c-5-7 5-10 0-18"/></g>' +
+      '<rect x="176" y="86" width="104" height="36" rx="4" fill="' + C.tq2 + '"/><rect x="176" y="80" width="104" height="10" rx="3" fill="' + C.oro + '"/>' +
+      f(196, 104) + f(222, 102) + f(248, 105) + f(268, 70) + f(240, 60);
+  };
+  var desayuno = function () {
+    return '<rect y="120" width="320" height="60" fill="' + C.lad3 + '"/><rect y="116" width="320" height="6" fill="' + C.lad2 + '"/>' +
+      '<circle cx="262" cy="46" r="20" fill="' + C.oro + '"/><g stroke="' + C.oro + '" stroke-width="3" stroke-linecap="round"><path d="M262 14v-8M290 46h8M282 26l6-6M242 26l-6-6"/></g>' +
+      '<path d="M70 84h60v26a20 20 0 0 1-20 20H90a20 20 0 0 1-20-20z" fill="' + C.bl + '"/><path d="M130 92h8a10 10 0 0 1 0 20h-8" fill="none" stroke="' + C.bl + '" stroke-width="5"/>' +
+      '<ellipse cx="100" cy="86" rx="28" ry="5" fill="' + C.lad3 + '"/><g fill="none" stroke="' + C.bl + '" stroke-width="2" opacity=".6" stroke-linecap="round"><path d="M90 70c-5-7 5-10 0-18"/><path d="M106 68c-5-7 5-10 0-18"/></g>' +
+      '<path d="M170 116c4-26 26-38 52-36s40 20 40 36z" fill="' + C.lad + '"/><g fill="none" stroke="' + C.lad3 + '" stroke-width="3" stroke-linecap="round"><path d="M196 84l-6 30M216 80l-2 34M236 84l6 30"/></g>';
+  };
+  var leon = function () {
+    var v = '';
+    for (var k = 0; k < 6; k++) v += '<rect x="' + (128 + k * 11) + '" y="100" width="6" height="30" rx="3" fill="' + C.tq + '" opacity=".8"/>';
+    return '<rect y="140" width="320" height="40" fill="' + C.suelo + '"/><path d="M0 142c60-14 120-14 180-4s100 8 140-2v44H0z" fill="' + C.lad3 + '" opacity=".6"/>' +
+      '<rect x="110" y="70" width="100" height="72" fill="' + C.lad + '"/><path d="M106 72l54-26 54 26z" fill="' + C.lad2 + '"/>' +
+      '<rect x="82" y="40" width="30" height="102" fill="' + C.lad2 + '"/><path d="M80 42l17-30 17 30z" fill="' + C.lad3 + '"/>' +
+      '<rect x="208" y="40" width="30" height="102" fill="' + C.lad2 + '"/><path d="M206 42l17-30 17 30z" fill="' + C.lad3 + '"/>' +
+      '<circle cx="160" cy="84" r="13" fill="' + C.noche + '"/><circle cx="160" cy="84" r="9" fill="none" stroke="' + C.oro + '" stroke-width="2"/><path d="M160 75v18M151 84h18" stroke="' + C.oro + '" stroke-width="1.5"/>' + v +
+      arcos(88, 60, 2, 7, 18, 11, C.noche) + arcos(214, 60, 2, 7, 18, 11, C.noche) + '<path d="M150 142v-18a10 10 0 0 1 20 0v18z" fill="' + C.noche + '"/>';
+  };
+  var alpes = function () {
+    var arc = '';
+    for (var k = 0; k < 7; k++) arc += '<path d="M' + (20 + k * 40) + ' 150v-14a16 16 0 0 1 32 0v14z" fill="' + C.cielo + '"/>';
+    return '<path d="M0 120L60 50l40 40 50-70 60 80 40-40 70 60v40H0z" fill="' + C.lad3 + '"/>' +
+      '<path d="M40 74l20-24 14 14zM130 48l20-28 22 30-12-6-10 8zM236 88l14-18 18 16z" fill="' + C.bl + '"/>' +
+      '<rect y="150" width="320" height="30" fill="' + C.tq2 + '"/><path d="M0 162h320" stroke="' + C.tq + '" stroke-width="2" stroke-dasharray="18 14" opacity=".6"/>' +
+      '<rect x="0" y="116" width="320" height="10" fill="' + C.lad2 + '"/><rect x="0" y="126" width="320" height="24" fill="' + C.lad2 + '"/>' + arc +
+      '<g transform="translate(70 96)"><rect width="56" height="20" rx="4" fill="#c0392b"/><rect x="60" width="56" height="20" rx="4" fill="#c0392b"/><rect x="120" width="56" height="20" rx="4" fill="#c0392b"/>' +
+      '<g fill="' + C.bl + '" opacity=".9"><rect x="6" y="4" width="12" height="7" rx="1"/><rect x="22" y="4" width="12" height="7" rx="1"/><rect x="38" y="4" width="12" height="7" rx="1"/><rect x="66" y="4" width="12" height="7" rx="1"/><rect x="82" y="4" width="12" height="7" rx="1"/><rect x="98" y="4" width="12" height="7" rx="1"/><rect x="126" y="4" width="12" height="7" rx="1"/><rect x="142" y="4" width="12" height="7" rx="1"/><rect x="158" y="4" width="12" height="7" rx="1"/></g></g>';
+  };
+  var hotel = function () {
+    var v = '', x, y;
+    for (y = 54; y < 150; y += 24) for (x = 96; x < 224; x += 22) v += '<rect x="' + x + '" y="' + y + '" width="12" height="14" fill="' + ((x + y) % 3 ? C.oro : C.noche) + '" opacity="' + ((x + y) % 3 ? '.9' : '1') + '"/>';
+    return '<rect width="320" height="180" fill="' + C.noche + '"/><circle cx="264" cy="40" r="16" fill="' + C.bl + '"/><circle cx="271" cy="35" r="14" fill="' + C.noche + '"/>' +
+      '<rect x="84" y="40" width="152" height="124" fill="' + C.lad2 + '"/><rect x="80" y="34" width="160" height="8" fill="' + C.lad3 + '"/>' + v +
+      '<rect x="146" y="140" width="28" height="24" fill="' + C.tq2 + '"/><text x="160" y="30" text-anchor="middle" font-family="Roboto,sans-serif" font-size="12" fill="' + C.oro + '" letter-spacing="3">HÔTEL</text>' +
+      '<rect y="164" width="320" height="16" fill="' + C.suelo + '"/>';
+  };
+  var concierto = function () {
+    var g = '';
+    for (var i = 0; i < 14; i++) g += '<circle cx="' + (16 + i * 22) + '" cy="' + (166 - (i % 3) * 3) + '" r="10" fill="' + C.noche + '"/>';
+    return '<rect width="320" height="180" fill="' + C.noche + '"/><g fill="' + C.oro + '" opacity=".22"><path d="M60 0l40 130h-80z"/><path d="M160 0l40 130h-80z"/><path d="M260 0l40 130h-80z"/></g>' +
+      '<rect x="20" y="120" width="280" height="14" fill="' + C.lad3 + '"/><g fill="' + C.tq + '"><circle cx="60" cy="4" r="6"/><circle cx="160" cy="4" r="6"/><circle cx="260" cy="4" r="6"/></g>' +
+      '<g fill="' + C.oro + '"><path d="M120 60v26a6 6 0 1 1-3-5V56l20-4v26a6 6 0 1 1-3-5V58z"/><path d="M200 74v18a5 5 0 1 1-3-4V72z"/></g>' + g;
+  };
+  var portada = function () {
+    return '<rect width="320" height="180" fill="' + C.cielo + '"/><circle cx="236" cy="70" r="30" fill="' + C.oro + '"/>' +
+      '<g fill="' + C.lad2 + '"><rect x="40" y="62" width="34" height="70"/><rect x="46" y="44" width="22" height="20"/><path d="M48 44l9-24 9 24z"/><rect x="96" y="92" width="110" height="40"/><path d="M140 92l14-10 14 10z"/></g>' +
+      '<g fill="' + C.noche + '">' + [44, 54, 64].map(function (x) { return '<rect x="' + x + '" y="72" width="5" height="10" rx="2.5"/><rect x="' + x + '" y="96" width="5" height="10" rx="2.5"/>'; }).join('') + '</g>' +
+      '<path d="M262 104a16 16 0 0 1 32 0z" fill="' + C.tq + '"/><rect x="262" y="104" width="32" height="28" fill="' + C.lad2 + '"/>' +
+      '<rect y="132" width="320" height="48" fill="' + C.tq2 + '"/><rect x="0" y="122" width="320" height="16" fill="' + C.lad + '"/>' + arcos(8, 128, 10, 22, 14, 32, C.tq2) +
+      '<path d="M0 156h320M0 170h320" stroke="' + C.tq + '" stroke-width="2" stroke-dasharray="18 14" opacity=".6"/>';
+  };
+  return {
+    desayuno: marco(desayuno()), 'saint-sernin': marco(sernin()), capitole: marco(capitole()), 'victor-hugo': marco(mercado()), comida: marco(comida()),
+    jacobins: marco(jacobins()), assezat: marco(assezat()), daurade: marco(pontneuf()), cafe: marco(violetas()),
+    hotel: marco(hotel(), C.noche), final: marco(concierto(), C.noche), portada: marco(portada()), leon: marco(leon()), alpes: marco(alpes())
+  };
+})();
+
+(function () {
+  'use strict';
+  /* ---------- Utilidades ---------- */
+  var $ = function (s) { return document.querySelector(s); };
+  var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
+  var K = 'miruta:' + RUTA.id + ':';
+  var leer = function (k, d) { try { var v = localStorage.getItem(K + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+  var guardar = function (k, v) { try { localStorage.setItem(K + k, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ } };
+  var ico = function (n) { return '<svg class="i" aria-hidden="true"><use href="#i-' + n + '"/></svg>'; };
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var metros = function (m) { return m < 995 ? Math.round(m / 10) * 10 + ' m' : (m / 1000).toFixed(1).replace('.', ',') + ' km'; };
+  var aPie = function (m) { return Math.max(1, Math.round(m / 75)); };
+  var reducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var TIPO = { monumento: 'Monumento', comida: 'Gastronomía', paseo: 'Paseo', hotel: 'Hotel' };
+  var NIVEL = { 3: 'Prioridad', 2: 'Recomendado', 1: 'Si da tiempo' };
+  var TAM = { 3: 46, 2: 38, 1: 30 };
+  var XP = { llegada: 50, reto: 30, nivel: 20 };
+  var RELOJ = 'https://jfolivarl.github.io/mi-ruta/reloj.html';
+  var RADIO = 60; /* metros del círculo de llegada (buffer) de cada parada */
+  var MODOS = { completa: { nombre: 'Completa', horas: '11:00–18:00' }, expres: { nombre: 'Exprés', horas: '11:00–15:30' } };
+
+  function recta(a, b) {
+    var r = Math.PI / 180, dLa = (b.lat - a.lat) * r, dLo = (b.lng - a.lng) * r;
+    var x = Math.pow(Math.sin(dLa / 2), 2) + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.pow(Math.sin(dLo / 2), 2);
+    return 2 * 6371000 * Math.asin(Math.sqrt(x));
+  }
+  var andando = function (a, b) { return recta(a, b) * 1.3; };
+  function rumbo(a, b) {
+    var r = Math.PI / 180, y = Math.sin((b.lng - a.lng) * r) * Math.cos(b.lat * r);
+    var x = Math.cos(a.lat * r) * Math.sin(b.lat * r) - Math.sin(a.lat * r) * Math.cos(b.lat * r) * Math.cos((b.lng - a.lng) * r);
+    return (Math.atan2(y, x) / r + 360) % 360;
+  }
+
+  /* ---------- Estado ---------- */
+  var J = leer('juego2', null) || { equipo: ['', ''], empezado: false, modo: 'completa', m: {} };
+  J.horas = J.horas || {};
+  var st = { comida: leer('comida', RUTA.comidas[0].id), hotel: leer('hotel', null), modoHotel: false };
+  var guardarJ = function () { guardar('juego2', J); };
+  var mis = function (id) { return J.m[id] || (J.m[id] = {}); };
+  var NIVELES = [], PUNTOS = {}, FOTOS = {};
+
+  function comidaElegida() { return RUTA.comidas.filter(function (c) { return c.id === st.comida; })[0] || RUTA.comidas[0]; }
+
+  function calcular() {
+    PUNTOS = {};
+    var expres = J.modo === 'expres', prev = null;
+    NIVELES = RUTA.paradas.filter(function (p) { return !expres || (JUEGO[p.id] || {}).expres; }).map(function (p, i) {
+      var q = Object.assign({}, p, { n: i + 1, tramo: null });
+      if (expres) q.hora = JUEGO[p.id].expres;
+      q.horaPdf = q.hora;
+      if (J.horas && J.horas[J.modo + ':' + p.id]) q.hora = J.horas[J.modo + ':' + p.id];
+      if (p.eleccion) { var c = comidaElegida(); q.lat = c.lat; q.lng = c.lng; q.lugar = c.nombre + ' · ' + c.zona; }
+      if (p.tipo === 'hotel' && st.hotel) { q.lat = st.hotel[0]; q.lng = st.hotel[1]; }
+      if (q.lat != null) { if (prev) q.tramo = andando(prev, q); prev = q; }
+      PUNTOS[q.id] = q;
+      return q;
+    });
+  }
+
+  var superado = function (id) { var m = J.m[id] || {}; return !!(m.llegada && m.reto); };
+  var siguiente = function () { return NIVELES.filter(function (p) { return !superado(p.id); })[0] || null; };
+  function xpTotal() {
+    return NIVELES.reduce(function (x, p) {
+      var m = J.m[p.id] || {};
+      return x + (m.llegada ? XP.llegada : 0) + (m.reto ? XP.reto : 0) + (superado(p.id) ? XP.nivel : 0);
+    }, 0);
+  }
+  var banderas = function () { return NIVELES.filter(function (p) { return superado(p.id); }).length; };
+  function rango(xp) { var r = RANGOS[0], sig = null; RANGOS.forEach(function (x, i) { if (xp >= x[0]) { r = x; sig = RANGOS[i + 1] || null; } }); return { nombre: r[1], desde: r[0], hasta: sig ? sig[0] : null, sig: sig ? sig[1] : null }; }
+
+  /* ---------- Hora real ---------- */
+  var minutos = function (h) { var p = h.split(':'); return +p[0] * 60 + +p[1]; };
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+  var durTxt = function (m) { var h = Math.floor(m / 60), r = m % 60; return h ? h + ' h' + (r ? ' ' + r + ' min' : '') : r + ' min'; };
+  function ahora() {
+    var d = new Date(), hoy = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    var m = d.getHours() * 60 + d.getMinutes(), hora = pad(d.getHours()) + ':' + pad(d.getMinutes());
+    var ini = minutos(NIVELES[0].hora), fin = minutos(RUTA.epilogo.hora);
+    if (hoy < RUTA.fecha) return { hora: hora, t: 'La ruta es el ' + RUTA.fechaTexto.toLowerCase() + ' a las ' + NIVELES[0].hora, id: null };
+    if (hoy > RUTA.fecha) return { hora: hora, t: 'Ruta terminada. ¡Qué gran día!', id: null };
+    if (m < ini) return { hora: hora, t: 'Empieza en ' + durTxt(ini - m) + ' en ' + NIVELES[0].nombre, id: null };
+    if (m >= fin) return { hora: hora, t: '¡Hora del concierto!', id: 'final' };
+    var i = 0;
+    NIVELES.forEach(function (p, k) { if (m >= minutos(p.hora)) i = k; });
+    var p = NIVELES[i], sig = NIVELES[i + 1];
+    var hasta = sig ? minutos(sig.hora) : fin;
+    var tarde = siguiente() && NIVELES.indexOf(siguiente()) < i;
+    var desde = minutos(p.hora);
+    return { hora: hora, t: 'Toca: ' + p.nombre + ' · quedan ' + durTxt(hasta - m) + (tarde ? ' · vais con retraso' : ''), id: p.id, frac: Math.max(0, Math.min(1, (hasta - m) / Math.max(1, hasta - desde))), queda: hasta - m };
+  }
+  function reloj() {
+    var a = ahora(), f = a.frac == null ? 1 : a.frac;
+    $('#reloj-h').textContent = a.hora;
+    $('#reloj-t').textContent = a.t;
+    /* cuenta atrás: el anillo se vacía y se desvanece hasta la siguiente parada */
+    var anillo = $('#reloj-anillo');
+    anillo.style.strokeDashoffset = String(Math.round((1 - f) * 100));
+    anillo.style.opacity = String(0.25 + 0.75 * f);
+    $('.reloj').classList.toggle('corre', a.frac != null);
+    $('.reloj').classList.toggle('ultimos', a.queda != null && a.queda <= 5);
+    if (hoja.open && hoja.dataset.clave === 'resumen') pintarHoja('resumen');
+    $$('.carta').forEach(function (c) { c.classList.toggle('ahora', (c.dataset.nivel || (c.dataset.hoja === 'logros' ? 'final' : '')) === a.id); });
+    return a;
+  }
+
+  /* ---------- Fotos (álbum en el propio móvil) ---------- */
+  var db = null;
+  function abrirDB() {
+    return new Promise(function (ok) {
+      try {
+        var r = indexedDB.open('miruta-fotos', 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore('fotos'); };
+        r.onsuccess = function () { db = r.result; ok(); };
+        r.onerror = function () { ok(); };
+      } catch (e) { ok(); }
+    });
+  }
+  function cargarFotos() {
+    return new Promise(function (ok) {
+      if (!db) { ok(); return; }
+      try {
+        var req = db.transaction('fotos').objectStore('fotos').openCursor();
+        req.onsuccess = function () { var c = req.result; if (c) { FOTOS[c.key] = c.value; c.continue(); } else ok(); };
+        req.onerror = function () { ok(); };
+      } catch (e) { ok(); }
+    });
+  }
+  function guardarFoto(id, data) {
+    FOTOS[id] = data;
+    if (!db) return;
+    try { db.transaction('fotos', 'readwrite').objectStore('fotos').put(data, id); } catch (e) { /* solo en memoria */ }
+  }
+  function reducirFoto(file, listo) {
+    var lector = new FileReader();
+    lector.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var s = Math.min(1, 1000 / Math.max(img.width, img.height));
+        var c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        listo(c.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = function () { listo(null); };
+      img.src = lector.result;
+    };
+    lector.onerror = function () { listo(null); };
+    lector.readAsDataURL(file);
+  }
+
+  /* ---------- Piezas visuales ---------- */
+  function circulo(p) {
+    var hecho = superado(p.id), sig = siguiente();
+    return '<span class="mk n' + p.nivel + ' ruta' + (hecho ? ' ok' : '') + (sig && sig.id === p.id ? ' sig' : '') + '">' + (hecho ? ico('bandera') : (p.tipo === 'hotel' ? ico('hotel') : p.n)) + '</span>';
+  }
+  function marcas2(id) {
+    var m = J.m[id] || {};
+    return '<span class="marcas2"><span class="mm' + (m.llegada ? ' on' : '') + '" title="Llegada">' + ico('pin') + '</span><span class="mm' + (m.reto ? ' on' : '') + '" title="Reto">' + ico('camara') + '</span></span>';
+  }
+
+  function nombreEquipo() {
+    var n = J.equipo.filter(Boolean);
+    if (!n.length) return RUTA.juego;
+    return n.join(' y ');
+  }
+  function hud() {
+    var xp = xpTotal(), r = rango(xp);
+    $('#hud-rango').textContent = r.nombre;
+    $('#hud-xp').textContent = xp + ' XP · Ruta ' + MODOS[J.modo].nombre.toLowerCase();
+    $('#hud-barra').style.width = (r.hasta ? Math.round((xp - r.desde) / (r.hasta - r.desde) * 100) : 100) + '%';
+    $('#hud-ban').textContent = banderas() + '/' + NIVELES.length;
+    $('#hud-equipo').textContent = nombreEquipo();
+  }
+
+  function carrusel() {
+    var sig = siguiente();
+    $('#niveles').innerHTML = NIVELES.map(function (p) {
+      var ok = superado(p.id), es = sig && sig.id === p.id;
+      return '<button type="button" class="carta' + (ok ? ' ok' : '') + (es ? ' sig' : '') + '" data-nivel="' + p.id + '">' +
+        '<span class="carta-ilu">' + ILU[p.id] + '<span class="chip">' + p.hora + '</span>' + (ok ? '<span class="sello">' + ico('bandera') + '</span>' : '') + '</span>' +
+        '<span class="carta-txt"><strong>' + esc(p.nombre) + '</strong><span class="carta-pie">' + marcas2(p.id) +
+        '<span class="nv nv' + p.nivel + '">' + (ok ? 'Coronado' : (es ? 'Siguiente' : NIVEL[p.nivel])) + '</span></span></span><span class="ahora-t">Ahora</span></button>';
+    }).join('') +
+    '<button type="button" class="carta final" data-hoja="logros"><span class="carta-ilu">' + ILU.final + '<span class="chip">' + RUTA.epilogo.hora + '</span></span>' +
+      '<span class="carta-txt"><strong>' + esc(RUTA.epilogo.titulo) + '</strong><span class="carta-pie"><span class="nv nv3">Trofeos y álbum</span></span></span></button>';
+  }
+
+  /* ---------- Hoja de nivel ---------- */
+  function mision(icono, titulo, xp, hecho, cuerpo) {
+    return '<li class="mision' + (hecho ? ' hecha' : '') + '"><span class="mk n2' + (hecho ? ' ok' : '') + '">' + ico(hecho ? 'check' : icono) + '</span>' +
+      '<div class="mision-c"><p class="mision-t"><strong>' + titulo + '</strong><span class="gana">+' + xp + ' XP</span></p>' + cuerpo + '</div></li>';
+  }
+
+  function nivelHtml(p) {
+    var g = JUEGO[p.id] || {}, m = J.m[p.id] || {};
+    var dist = gps.pos && p.lat != null ? andando(gps.pos, p) : null;
+    var lleg = m.llegada ? '<p class="hecho-t">' + ico('check') + 'OK · ¡Dentro del círculo!</p>'
+      : '<p>' + (dist != null ? 'Estáis a ' + metros(dist) + ' · ' + aPie(dist) + ' min. ' : (p.tramo ? 'Desde la parada anterior: ' + aPie(p.tramo) + ' min a pie. ' : '')) + 'Con «Sígueme», al entrar en el círculo de ' + RADIO + ' m se pone OK solo.</p>' +
+        '<button type="button" class="pill" data-a="llegada" data-id="' + p.id + '">' + ico('pin') + 'Estamos aquí</button>';
+    var reto = '<p>' + esc(g.reto || '') + '</p>' + (FOTOS[p.id] ? '<img class="foto" src="' + FOTOS[p.id] + '" alt="Vuestra foto en ' + esc(p.nombre) + '">' : '') +
+      (m.reto ? '<p class="hecho-t">' + ico('bandera') + '¡Bandera plantada!</p>' :
+        '<div class="acciones"><label class="pill activa">' + ico('camara') + 'Hacer foto<input type="file" accept="image/*" capture="environment" data-foto="' + p.id + '" hidden></label>' +
+        '<button type="button" class="pill" data-a="reto" data-id="' + p.id + '">' + ico('check') + '¡Hecho!</button></div>');
+    var extra = '';
+    if (p.eleccion) extra = '<div class="opciones">' + RUTA.comidas.map(function (c) {
+      return '<button type="button" class="opcion" data-comida="' + c.id + '" aria-pressed="' + (c.id === st.comida) + '"><strong>' + esc(c.nombre) + '</strong><span class="zona">' + esc(c.zona) + '</span><span>' + esc(c.texto) + '</span><em>' + esc(c.porque) + '</em></button>';
+    }).join('') + '</div>';
+    if (p.tipo === 'hotel') extra = '<button type="button" class="pill" data-a="hotel">' + ico('hotel') + (st.hotel ? 'Cambiar hotel en el mapa' : 'Fijar hotel en el mapa') + '</button>';
+    var sigN = NIVELES[p.n] || null;
+    return '<div class="hoja-hero">' + ILU[p.id] + '<button type="button" class="redondo cerrar" data-cerrar="1" aria-label="Cerrar">' + ico('cerrar') + '</button>' +
+        '<span class="chip">Nivel ' + p.n + ' · ' + p.hora + (p.dur ? ' · ' + p.dur : '') + '</span>' + (superado(p.id) ? '<span class="sello grande">' + ico('bandera') + '</span>' : '') + '</div>' +
+      '<div class="hoja-cuerpo">' +
+        '<p class="tipo">' + ico(p.tipo) + TIPO[p.tipo] + ' · <span class="nv nv' + p.nivel + '">' + NIVEL[p.nivel] + '</span> · Insignia <strong class="dorado-t">' + esc(g.insignia || '') + '</strong></p>' +
+        '<h2 id="hoja-t">' + esc(p.nombre) + '</h2>' + (p.lugar ? '<p class="lugar">' + esc(p.lugar) + '</p>' : '') +
+        '<p class="relato">' + esc(p.texto) + '</p>' + extra +
+        '<ul class="misiones">' +
+          mision('bandera', 'Llevad la bandera hasta aquí', XP.llegada, m.llegada, lleg) +
+          mision('camara', 'Coronad el nivel', XP.reto, m.reto, reto) +
+        '</ul>' +
+      '</div>' +
+      '<div class="hoja-pie">' +
+        (p.lat != null ? '<button type="button" class="pill" data-a="llevar" data-id="' + p.id + '">' + ico('flecha') + 'Llévame</button>' : '') +
+        (sigN ? '<button type="button" class="pill activa" data-nivel="' + sigN.id + '">' + sigN.hora + ' · Siguiente ' + ico('siguiente') + '</button>' : '<button type="button" class="pill activa" data-hoja="logros">' + ico('trofeo') + 'Ver trofeos</button>') +
+      '</div>';
+  }
+
+  function logrosHtml() {
+    var xp = xpTotal(), r = rango(xp), hechos = NIVELES.filter(function (p) { return superado(p.id); }).length;
+    var fotos = NIVELES.filter(function (p) { return FOTOS[p.id]; });
+    var esp = [
+      { nombre: 'Fotógrafos', icono: 'camara', ok: fotos.length >= 3 },
+      { nombre: 'Ruta ' + MODOS[J.modo].nombre, icono: 'trofeo', ok: hechos === NIVELES.length }
+    ];
+    return '<div class="hoja-hero">' + ILU.final + '<button type="button" class="redondo cerrar" data-cerrar="1" aria-label="Cerrar">' + ico('cerrar') + '</button><span class="chip">' + esc(RUTA.epilogo.titulo) + ' · ' + RUTA.epilogo.hora + '</span></div>' +
+      '<div class="hoja-cuerpo"><h2 id="hoja-t">' + esc(r.nombre) + '</h2>' +
+        '<p class="lugar">' + xp + ' XP' + (r.sig ? ' · faltan ' + (r.hasta - xp) + ' para ' + esc(r.sig) : ' · rango máximo') + '</p>' +
+        '<div class="stats"><span><strong>' + hechos + '/' + NIVELES.length + '</strong>banderas</span><span><strong>' + fotos.length + '</strong>fotos</span><span><strong>' + xp + '</strong>XP</span></div>' +
+        '<p class="relato">' + esc(RUTA.epilogo.texto) + '</p>' +
+        '<h3 class="punto">Ruta</h3>' + selectorModo() +
+        '<h3 class="punto">Horario</h3><ul class="horario">' + NIVELES.map(function (p) { return '<li><button type="button" data-nivel="' + p.id + '"><time>' + p.hora + '</time>' + circulo(p) + '<span>' + esc(p.nombre) + '</span></button></li>'; }).join('') + '</ul>' +
+        '<h3 class="punto">Insignias</h3><div class="insignias">' +
+          NIVELES.map(function (p) { var ok = superado(p.id); return '<button type="button" class="insignia' + (ok ? ' ok' : '') + '" data-nivel="' + p.id + '"><span class="mk n2' + (ok ? ' ok' : '') + '">' + ico(ok ? 'bandera' : 'candado') + '</span><small>' + esc((JUEGO[p.id] || {}).insignia || p.nombre) + '</small></button>'; }).join('') +
+          esp.map(function (e) { return '<span class="insignia' + (e.ok ? ' ok' : '') + '"><span class="mk n2' + (e.ok ? ' ok' : '') + '">' + ico(e.ok ? e.icono : 'candado') + '</span><small>' + esc(e.nombre) + '</small></span>'; }).join('') +
+        '</div>' +
+        '<h3 class="punto">Álbum</h3>' + (fotos.length ? '<div class="album">' + fotos.map(function (p) { return '<figure><img src="' + FOTOS[p.id] + '" alt="' + esc(p.nombre) + '"><figcaption>' + p.hora + ' · ' + esc(p.nombre) + '</figcaption></figure>'; }).join('') + '</div>' : '<p class="nota">Las fotos de los retos aparecerán aquí.</p>') +
+        '<h3 class="punto">Pequeños detalles</h3><ul class="ver">' + RUTA.consejos.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul>' +
+        '<p class="nota creditos">Autor: <strong>Juan Felipe Olivar Londoño</strong> · Ruta: itinerario «Toulouse en pareja» · Mapas © OpenStreetMap y Esri · Leaflet.</p>' +
+        '<button type="button" class="pill peligro" data-a="reiniciar">' + ico('reiniciar') + (confirmar ? 'Pulsa otra vez para borrar todo' : 'Reiniciar el juego') + '</button>' +
+      '</div>';
+  }
+
+  function resumenHtml() {
+    var a = ahora(), hechos = banderas(), xp = xpTotal(), f = a.frac == null ? 1 : a.frac;
+    var cambiadas = NIVELES.some(function (p) { return p.hora !== p.horaPdf; });
+    return '<div class="hoja-cuerpo resumen"><div class="res-cab"><h2 id="hoja-t">Cómo vais</h2><button type="button" class="redondo" data-cerrar="1" aria-label="Cerrar">' + ico('cerrar') + '</button></div>' +
+      '<div class="res-reloj"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="fondo" cx="20" cy="20" r="15.9"/><circle class="arco" cx="20" cy="20" r="15.9" pathLength="100" style="stroke-dashoffset:' + Math.round((1 - f) * 100) + ';opacity:' + (0.25 + 0.75 * f).toFixed(2) + '"/></svg>' +
+        '<div><time>' + a.hora + '</time><p>' + esc(a.t) + '</p></div></div>' +
+      '<div class="stats"><span><strong>' + hechos + '/' + NIVELES.length + '</strong>banderas</span><span><strong>' + xp + '</strong>XP</span><span><strong>' + esc(MODOS[J.modo].nombre) + '</strong>ruta</span></div>' +
+      '<div class="xp grande"><span style="width:' + Math.round(hechos / NIVELES.length * 100) + '%"></span></div>' +
+      '<h3 class="punto">Itinerario</h3><p class="nota">Si cambia el plan, tocad una hora: las paradas siguientes se ajustan solas al nuevo horario.</p>' +
+      '<ul class="itin">' + NIVELES.map(function (p) {
+        var m = J.m[p.id] || {}, ok = superado(p.id), est;
+        if (ok) est = '<span class="est-ok">' + ico('bandera') + 'Coronado' + (m.hora ? ' a las ' + m.hora + retraso(m.hora, p.hora) : '') + '</span>';
+        else if (m.llegada) est = '<span class="est-ok">' + ico('check') + 'OK' + (m.hora ? ' a las ' + m.hora + retraso(m.hora, p.hora) : '') + ' · falta el reto</span>';
+        else est = '<span class="est-pen">' + (a.id === p.id ? 'Toca ahora' : 'Pendiente') + '</span>';
+        return '<li class="' + (a.id === p.id ? 'ahora' : '') + '">' +
+          '<input type="time" value="' + p.hora + '" data-hora="' + p.id + '" aria-label="Hora de ' + esc(p.nombre) + '">' +
+          '<button type="button" class="itin-n" data-nivel="' + p.id + '">' + circulo(p) + '<span><strong>' + esc(p.nombre) + '</strong>' + est + (p.hora !== p.horaPdf ? '<small>En el PDF: ' + p.horaPdf + '</small>' : '') + '</span></button></li>';
+      }).join('') + '<li class="fin"><span class="itin-h">' + RUTA.epilogo.hora + '</span><span>' + esc(RUTA.epilogo.titulo) + '</span></li></ul>' +
+      (cambiadas ? '<button type="button" class="pill" data-a="horas-pdf">' + ico('reiniciar') + 'Volver al horario del PDF</button>' : '') +
+      '<h3 class="punto">En el Apple Watch</h3><p class="nota">Enviaos por Mensajes este enlace y abridlo en el reloj: veréis la hora, qué toca y la cuenta atrás.</p>' +
+      '<p class="enlace-reloj">' + RELOJ + '</p><button type="button" class="pill" data-a="copiar-reloj">' + ico('check') + 'Copiar enlace del reloj</button>' +
+    '</div>';
+  }
+  function retraso(real, plan) {
+    var d = minutos(real) - minutos(plan);
+    if (Math.abs(d) < 3) return ' (en hora)';
+    return d > 0 ? ' (+' + d + ' min)' : ' (' + d + ' min)';
+  }
+  function fijarHora(id, hhmm) {
+    if (!/^\d{2}:\d{2}$/.test(hhmm)) return;
+    var p = PUNTOS[id]; if (!p) return;
+    if (hhmm === p.horaPdf) delete J.horas[J.modo + ':' + id]; else J.horas[J.modo + ':' + id] = hhmm;
+  }
+  /* Cambiar una hora mueve también todas las paradas siguientes */
+  function cambiarHora(id, hhmm) {
+    if (!/^\d{2}:\d{2}$/.test(hhmm) || !PUNTOS[id]) return;
+    var i = NIVELES.findIndex(function (p) { return p.id === id; }), delta = minutos(hhmm) - minutos(PUNTOS[id].hora);
+    if (i < 0 || !delta) return;
+    NIVELES.slice(i).forEach(function (p) {
+      var m = Math.max(0, Math.min(23 * 60 + 59, minutos(p.hora) + delta));
+      fijarHora(p.id, pad(Math.floor(m / 60)) + ':' + pad(m % 60));
+    });
+    guardarJ(); refrescar();
+    var resto = NIVELES.length - 1 - i;
+    aviso(PUNTOS[id].nombre + ' a las ' + hhmm + (resto ? ' · ' + resto + ' paradas siguientes ' + (delta > 0 ? '+' : '−') + Math.abs(delta) + ' min' : ''));
+  }
+
+  function selectorModo() {
+    return '<div class="modos" role="group" aria-label="Elegir ruta">' + Object.keys(MODOS).map(function (k) {
+      var n = RUTA.paradas.filter(function (p) { return k === 'completa' || (JUEGO[p.id] || {}).expres; }).length;
+      return '<button type="button" class="modo" data-modo="' + k + '" aria-pressed="' + (J.modo === k) + '"><strong>' + MODOS[k].nombre + '</strong><span>' + MODOS[k].horas + ' · ' + n + ' paradas</span>' +
+        '<small>' + (k === 'expres' ? 'Solo las prioridades del PDF y la comida' : 'El itinerario entero del PDF') + '</small></button>';
+    }).join('') + '</div>';
+  }
+
+  /* ---------- Hoja (diálogo) con historial ---------- */
+  var hoja = $('#hoja'), confirmar = false;
+  function pintarHoja(clave) {
+    var html = null;
+    if (clave === 'logros') html = logrosHtml();
+    else if (clave === 'resumen') html = resumenHtml();
+    else if (/^nivel-/.test(clave) && PUNTOS[clave.slice(6)]) html = nivelHtml(PUNTOS[clave.slice(6)]);
+    if (!html) return false;
+    var abierta = hoja.open && hoja.dataset.clave === clave, sc = hoja.scrollTop;
+    hoja.dataset.clave = clave;
+    hoja.innerHTML = html;
+    if (!hoja.open) { if (hoja.showModal) hoja.showModal(); else hoja.setAttribute('open', ''); }
+    hoja.scrollTop = abierta ? sc : 0;
+    return true;
+  }
+  function abrir(clave) {
+    if (location.hash === '#' + clave) { pintarHoja(clave); return; }
+    if (hoja.open && /^#(nivel-|logros|resumen)/.test(location.hash)) location.replace('#' + clave); /* una hoja sustituye a otra: Atrás vuelve al mapa */
+    else location.hash = clave;
+  }
+  function cerrarHoja() { if (hoja.open) hoja.close(); hoja.dataset.clave = ''; confirmar = false; }
+  function volver() { if (/^#(nivel-|logros|resumen)/.test(location.hash)) history.back(); else cerrarHoja(); }
+  hoja.addEventListener('cancel', function (ev) { ev.preventDefault(); volver(); });
+  hoja.addEventListener('click', function (ev) { if (ev.target === hoja || ev.target.closest('[data-cerrar]')) volver(); });
+  function rutaHash() {
+    var h = location.hash.slice(1);
+    if (h && pintarHoja(h)) { var p = PUNTOS[h.replace(/^nivel-/, '')]; if (p && mapa && p.lat != null && !seguirGps()) mapa.panTo([p.lat, p.lng], { animate: !reducido }); return; }
+    cerrarHoja();
+  }
+
+  /* ---------- Recompensas ---------- */
+  var tAviso = 0;
+  function aviso(t) {
+    var el = $('#toast'); el.textContent = t; el.classList.add('ver');
+    clearTimeout(tAviso); tAviso = setTimeout(function () { el.classList.remove('ver'); }, 2600);
+  }
+  function premio(xp, texto, grande) {
+    var el = $('#premio');
+    el.innerHTML = '<strong>+' + xp + ' XP</strong><span>' + esc(texto) + '</span>';
+    el.className = 'premio ver' + (grande ? ' grande' : '');
+    clearTimeout(premio.t); premio.t = setTimeout(function () { el.className = 'premio'; }, grande ? 2600 : 1500);
+    if (grande && !reducido) confeti();
+  }
+  function confeti() {
+    var c = $('#confeti'), colores = ['#D6AD55', '#1DA0AB', '#e8eef4', '#3CC0CA'], h = '';
+    for (var i = 0; i < 40; i++) h += '<i style="left:' + Math.round(Math.random() * 100) + '%;background:' + colores[i % 4] + ';animation-delay:' + (Math.random() * 0.5).toFixed(2) + 's;animation-duration:' + (1.6 + Math.random()).toFixed(2) + 's"></i>';
+    c.innerHTML = h; clearTimeout(confeti.t); confeti.t = setTimeout(function () { c.innerHTML = ''; }, 3200);
+  }
+  function lograr(id, campo) {
+    if ((J.m[id] || {})[campo]) return;
+    var antes = superado(id), xpAntes = xpTotal();
+    mis(id)[campo] = 1;
+    if (campo === 'llegada' || (campo === 'reto' && !mis(id).hora)) { var dd = new Date(); mis(id).hora = pad(dd.getHours()) + ':' + pad(dd.getMinutes()); }
+    guardarJ();
+    var ganado = xpTotal() - xpAntes;
+    var corona = !antes && superado(id);
+    if (corona) premio(ganado, '¡Nivel coronado! Bandera plantada en ' + PUNTOS[id].nombre, true);
+    else premio(ganado, campo === 'llegada' ? 'OK · ¡Dentro del círculo!' : '¡Reto hecho! Falta llegar para plantar la bandera');
+    refrescar();
+    if (corona && gps.id === null) moverEquipo(posEquipo(), true);
+  }
+
+  /* ---------- Mapa ---------- */
+  var mapa = null, capa = null, marcas = {};
+  function iniciarMapa() {
+    if (!window.L) { $('#mapa').innerHTML = '<p class="sin-mapa">No se ha podido cargar el mapa. Los niveles siguen abajo.</p>'; return; }
+    tamMapa();
+    /* El mapa puede girar: los gestos los lleva Mi Ruta (arrastrar, pellizcar y girar con dos dedos) */
+    mapa = L.map('mapa', { zoomControl: false, attributionControl: false, dragging: false, touchZoom: false, zoomSnap: 0, zoomDelta: 0.5, maxZoom: 21, tapTolerance: 15 }).setView(RUTA.centro, 15);
+    mapa.mouseEventToContainerPoint = function (e) {
+      var r = $('.mapa-zona').getBoundingClientRect(), a = -ROT * Math.PI / 180;
+      var dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      return L.point(dx * Math.cos(a) - dy * Math.sin(a) + D / 2, dx * Math.sin(a) + dy * Math.cos(a) + D / 2);
+    };
+    /* Autor y escala, como en Mis viajes (fuera del mapa para que no giren) */
+    var atr = L.control.attribution({ prefix: 'Autor: <a href="https://github.com/jfolivarl" target="_blank" rel="noopener"><b>Juan Felipe Olivar Londoño</b></a> · <a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>' });
+    atr._map = mapa; $('#mapa-creditos').appendChild(atr.onAdd(mapa));
+    var esc = L.control.scale({ imperial: false, maxWidth: 100 });
+    esc._map = mapa; $('#mapa-escala').appendChild(esc.onAdd(mapa));
+    var OSM = '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>';
+    var ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
+    var ESRI_A = '© <a href="https://www.esri.com" target="_blank" rel="noopener">Esri</a>';
+    CAPAS = {
+      azul: L.layerGroup([
+        L.tileLayer(ESRI + 'Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxNativeZoom: 16, maxZoom: 21, className: 'capa-azul', attribution: ESRI_A + ', HERE, Garmin · ' + OSM }),
+        L.tileLayer(ESRI + 'Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxNativeZoom: 16, maxZoom: 21, className: 'capa-azul' })
+      ]),
+      calle: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxNativeZoom: 19, maxZoom: 21, attribution: OSM }),
+      relieve: L.tileLayer(ESRI + 'World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxNativeZoom: 18, maxZoom: 21, attribution: ESRI_A + ', HERE, Garmin, USGS · ' + OSM }),
+      satelite: L.layerGroup([
+        L.tileLayer(ESRI + 'World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxNativeZoom: 19, maxZoom: 21, attribution: 'Imágenes ' + ESRI_A + ', Maxar, Earthstar Geographics' }),
+        L.tileLayer(ESRI + 'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxNativeZoom: 19, maxZoom: 21 })
+      ])
+    };
+    ponerBase(leer('base', 'azul'));
+    capa = L.layerGroup().addTo(mapa);
+    mapa.on('click', function (ev) {
+      if (!st.modoHotel) return;
+      st.hotel = [+ev.latlng.lat.toFixed(5), +ev.latlng.lng.toFixed(5)];
+      guardar('hotel', st.hotel); modoHotel(false); aviso('Hotel guardado'); refrescar();
+    });
+    gestos();
+  }
+
+  /* ---------- Norte y giro del mapa ---------- */
+  var ROT = 0, D = 0;
+  function tamMapa() {
+    var z = $('.mapa-zona'), W = z.clientWidth, H = z.clientHeight, m = $('#mapa');
+    D = Math.ceil(Math.sqrt(W * W + H * H)) + 2;
+    m.style.width = D + 'px'; m.style.height = D + 'px';
+    m.style.left = Math.round((W - D) / 2) + 'px'; m.style.top = Math.round((H - D) / 2) + 'px';
+    if (mapa) mapa.invalidateSize({ animate: false });
+  }
+  function girar(g, animar) {
+    ROT = ((g % 360) + 540) % 360 - 180;
+    var m = $('#mapa');
+    m.classList.toggle('anim-giro', !!animar && !reducido);
+    m.style.setProperty('--rot', ROT + 'deg');
+    $('#norte').style.setProperty('--rot', ROT + 'deg');
+    $('#norte').classList.toggle('girado', Math.abs(ROT) > 0.5);
+    $('#norte').setAttribute('aria-label', Math.abs(ROT) > 0.5 ? 'Volver a orientar al norte' : 'Norte arriba');
+    guiar();
+  }
+  function dejarDeSeguir() { if (gps.id !== null && gps.seguir) { gps.seguir = false; botones(); } }
+  function gestos() {
+    var zona = $('.mapa-zona'), P = {}, g = null, movido = false;
+    /* el mapa es más grande que su marco para poder girar: el marco nunca debe desplazarse */
+    zona.addEventListener('scroll', function () { zona.scrollTop = 0; zona.scrollLeft = 0; });
+    var lista = function () { return Object.keys(P).map(function (k) { return P[k]; }); };
+    var giro = function (dx, dy) { var a = -ROT * Math.PI / 180; return [dx * Math.cos(a) - dy * Math.sin(a), dx * Math.sin(a) + dy * Math.cos(a)]; };
+    function empezar() {
+      var ps = lista();
+      if (!ps.length) { g = null; return; }
+      if (ps.length === 1) { g = { n: 1, x: ps[0].x, y: ps[0].y }; return; }
+      var a = ps[0], b = ps[1];
+      g = { n: 2, d: Math.hypot(b.x - a.x, b.y - a.y) || 1, ang: Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2, z: mapa.getZoom(), rot: ROT, girando: false };
+    }
+    zona.addEventListener('pointerdown', function (e) {
+      if (e.target.closest('button, a, input, .panel-izq, .herr, .menu-capas, .aviso-hotel, .mapa-pie, .norte-caja')) return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      P[e.pointerId] = { x: e.clientX, y: e.clientY };
+      if (Object.keys(P).length === 1) movido = false;
+      empezar();
+    });
+    window.addEventListener('pointermove', function (e) {
+      if (!P[e.pointerId] || !g) return;
+      P[e.pointerId] = { x: e.clientX, y: e.clientY };
+      var ps = lista(), v;
+      if (g.n === 1 && ps.length === 1) {
+        var dx = e.clientX - g.x, dy = e.clientY - g.y;
+        if (!movido && Math.hypot(dx, dy) < 6) return;
+        if (!movido) { movido = true; dejarDeSeguir(); }
+        if (e.shiftKey || e.altKey) girar(ROT + dx * 0.4); /* ratón: Mayús + arrastrar gira */
+        else { v = giro(dx, dy); mapa.panBy([-v[0], -v[1]], { animate: false }); }
+        g.x = e.clientX; g.y = e.clientY;
+      } else if (g.n === 2 && ps.length >= 2) {
+        var p1 = ps[0], p2 = ps[1], d = Math.hypot(p2.x - p1.x, p2.y - p1.y), ang = Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+        movido = true; dejarDeSeguir();
+        var dAng = ((ang - g.ang) + 540) % 360 - 180;
+        if (!g.girando && Math.abs(dAng) > 12) { g.girando = true; g.ang = ang; g.rot = ROT; dAng = 0; }
+        if (g.girando) girar(g.rot + dAng);
+        var mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
+        v = giro(mx - g.mx, my - g.my);
+        mapa.panBy([-v[0], -v[1]], { animate: false });
+        g.mx = mx; g.my = my;
+        var z = Math.max(mapa.getMinZoom(), Math.min(mapa.getMaxZoom(), g.z + Math.log2(d / g.d)));
+        mapa.setZoomAround(mapa.mouseEventToContainerPoint({ clientX: mx, clientY: my }), z, { animate: false });
+      }
+    }, { passive: true });
+    function fin(e) {
+      if (!P[e.pointerId]) return;
+      var eran = Object.keys(P).length;
+      delete P[e.pointerId];
+      if (eran === 2 && Math.abs(ROT) < 7 && ROT !== 0) girar(0, true); /* cerca del norte: se endereza */
+      empezar();
+    }
+    window.addEventListener('pointerup', fin);
+    window.addEventListener('pointercancel', fin);
+    zona.addEventListener('click', function (e) { if (movido && !e.target.closest('button, a, input')) { e.stopPropagation(); e.preventDefault(); movido = false; } }, true);
+  }
+  function dibujar() {
+    if (!mapa) return;
+    capa.clearLayers(); marcas = {};
+    var con = NIVELES.filter(function (p) { return p.lat != null; }), hechos = [];
+    con.some(function (p) { hechos.push([p.lat, p.lng]); return !superado(p.id); });
+    L.polyline(con.map(function (p) { return [p.lat, p.lng]; }), { color: '#9fb0c0', weight: 3, opacity: 0.55, dashArray: '1 8', lineCap: 'round', interactive: false }).addTo(capa);
+    L.polyline(hechos, { color: '#D6AD55', weight: 4, lineCap: 'round', interactive: false }).addTo(capa);
+    con.forEach(function (p) {
+      var dentro = !!(J.m[p.id] || {}).llegada;
+      L.circle([p.lat, p.lng], { radius: RADIO, className: 'buffer' + (dentro ? ' dentro' : ''), color: dentro ? '#1DA0AB' : '#FEBF04', weight: 1.5, dashArray: dentro ? null : '4 6', fillColor: dentro ? '#1DA0AB' : '#FEBF04', fillOpacity: dentro ? 0.16 : 0.06, interactive: false }).addTo(capa);
+    });
+    con.forEach(function (p) {
+      var t = TAM[p.nivel];
+      var m = L.marker([p.lat, p.lng], { icon: L.divIcon({ className: 'mk-caja', html: circulo(p), iconSize: [t, t], iconAnchor: [t / 2, t / 2] }), title: p.nombre, alt: p.nombre, riseOnHover: true, zIndexOffset: p.nivel * 100 }).addTo(capa);
+      m.on('click', function () { abrir('nivel-' + p.id); });
+      marcas[p.id] = m;
+    });
+    if (gps.rastro) gps.rastro.addTo(capa);
+  }
+  function encuadrar() {
+    if (!mapa) return;
+    var pts = NIVELES.filter(function (p) { return p.lat != null; }).map(function (p) { return [p.lat, p.lng]; });
+    var z = $('.mapa-zona'), px = Math.max(30, (D - z.clientWidth) / 2 + 30), py = Math.max(30, (D - z.clientHeight) / 2 + 30);
+    if (pts.length) mapa.fitBounds(pts, { paddingTopLeft: [px, py], paddingBottomRight: [px, py] });
+  }
+
+  /* ---------- Nosotros: el punto que lleva la bandera ---------- */
+  var equipo = null, animEquipo = 0;
+  function posEquipo() {
+    if (gps.pos) return [gps.pos.lat, gps.pos.lng];
+    var con = NIVELES.filter(function (p) { return p.lat != null; }), ult = null;
+    con.forEach(function (p) { if (superado(p.id)) ult = p; });
+    var p = ult || con[0];
+    return p ? [p.lat, p.lng] : RUTA.centro;
+  }
+  function crearEquipo() {
+    if (!mapa || equipo) return;
+    var html = '<span class="yo"><svg class="yo-bandera" viewBox="0 0 26 34" aria-hidden="true"><path class="mastil" d="M9 31V5"/><circle class="pomo" cx="9" cy="4" r="2.4"/><path class="tela" d="M10.5 6.5L24 11.5 10.5 16.5z"/></svg><span class="yo-punto"></span><span class="yo-ok">OK</span></span>';
+    equipo = L.marker(posEquipo(), { icon: L.divIcon({ className: 'mk-caja', html: html, iconSize: [40, 44], iconAnchor: [12, 34] }), interactive: false, keyboard: false, zIndexOffset: 3000 }).addTo(mapa);
+  }
+  function moverEquipo(dest, animar) {
+    if (!equipo) return;
+    cancelAnimationFrame(animEquipo);
+    var a = equipo.getLatLng(), t0 = 0, dur = 1200;
+    if (!animar || reducido) { equipo.setLatLng(dest); return; }
+    var paso = function (t) {
+      if (!t0) t0 = t;
+      var f = Math.min(1, (t - t0) / dur), e = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;
+      equipo.setLatLng([a.lat + (dest[0] - a.lat) * e, a.lng + (dest[1] - a.lng) * e]);
+      if (f < 1) animEquipo = requestAnimationFrame(paso);
+    };
+    animEquipo = requestAnimationFrame(paso);
+    if (mapa && !hoja.open) mapa.panTo(dest, { animate: true, duration: 1.2 });
+  }
+
+  /* ---------- Capas: azul, callejero, relieve y satélite ---------- */
+  var CAPAS = {}, BASE = null;
+  var NOMBRES_BASE = { azul: 'Azul', calle: 'Callejero', relieve: 'Relieve', satelite: 'Satélite' };
+  function ponerBase(k) {
+    if (!CAPAS[k]) k = 'azul';
+    if (BASE && CAPAS[BASE]) mapa.removeLayer(CAPAS[BASE]);
+    BASE = k; CAPAS[k].addTo(mapa);
+    $('.mapa-zona').classList.toggle('base-clara', k === 'calle' || k === 'relieve');
+    $('#b-capas .sw').dataset.b = k;
+    guardar('base', k);
+  }
+  function menuCapas(ver) {
+    var m = $('#menu-capas');
+    if (ver) m.innerHTML = '<p class="menu-t">Mapa base</p>' + Object.keys(NOMBRES_BASE).map(function (k) {
+      return '<button type="button" data-base="' + k + '" aria-pressed="' + (k === BASE) + '"><span class="sw" data-b="' + k + '" aria-hidden="true"><i></i></span>' + NOMBRES_BASE[k] + '</button>';
+    }).join('');
+    m.hidden = !ver;
+    $('#b-capas').setAttribute('aria-expanded', String(ver));
+  }
+
+  /* Al deslizar las cartas, el mapa vuela al nivel del centro */
+  var obsCartas = null;
+  function vigilarCartas() {
+    if (obsCartas) obsCartas.disconnect();
+    if (!window.IntersectionObserver) return;
+    var inicial = true; /* el primer aviso es solo la posición de partida: no mueve el mapa */
+    obsCartas = new IntersectionObserver(function (ents) {
+      var mover = !inicial; inicial = false;
+      ents.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var id = e.target.dataset.nivel;
+        $$('.carta').forEach(function (c) { c.classList.toggle('centro', c === e.target); });
+        Object.keys(marcas).forEach(function (k) { var el = marcas[k].getElement(); if (el) el.classList.toggle('activa', k === id); });
+        var p = PUNTOS[id];
+        if (mover && mapa && p && p.lat != null && !seguirGps() && !hoja.open) mapa.flyTo([p.lat, p.lng], 16, { duration: reducido ? 0 : 0.7 });
+      });
+    }, { root: $('#niveles'), threshold: 0.75 });
+    $$('.carta[data-nivel]').forEach(function (c) { obsCartas.observe(c); });
+  }
+
+  /* ---------- GPS: Sígueme ---------- */
+  var gps = { id: null, seguir: true, halo: null, guia: null, rastro: null, objetivo: null, pos: null };
+  var seguirGps = function () { return gps.id !== null && gps.seguir; };
+  function botones() {
+    $('#b-sigue').setAttribute('aria-pressed', String(gps.id !== null));
+    $('#b-sigue span').textContent = gps.id !== null && !gps.seguir ? 'Centrar' : 'Sígueme';
+    $('#guia').hidden = gps.id === null;
+  }
+  function objetivo() {
+    if (gps.objetivo && PUNTOS[gps.objetivo]) return PUNTOS[gps.objetivo];
+    return NIVELES.filter(function (p) { return p.lat != null && !(J.m[p.id] || {}).llegada; })[0] || null;
+  }
+  function guiar() {
+    if (!gps.pos || !mapa) return;
+    var o = objetivo();
+    if (!o) { $('#guia-t').textContent = '¡Ruta completada!'; if (gps.guia) gps.guia.setLatLngs([]); return; }
+    var d = andando(gps.pos, o);
+    $('#guia-flecha').style.transform = 'rotate(' + Math.round(rumbo(gps.pos, o) + ROT) + 'deg)';
+    $('#guia-t').textContent = metros(d) + ' · ' + aPie(d) + ' min · ' + o.nombre;
+    $('#guia').dataset.hoja = 'nivel-' + o.id;
+    if (!gps.guia) gps.guia = L.polyline([], { color: '#3CC0CA', weight: 3, dashArray: '6 8', interactive: false }).addTo(mapa);
+    gps.guia.setLatLngs([[gps.pos.lat, gps.pos.lng], [o.lat, o.lng]]);
+  }
+  function gpsOk(pos) {
+    if (!mapa) return;
+    var ll = [pos.coords.latitude, pos.coords.longitude], acc = pos.coords.accuracy || 30;
+    gps.pos = { lat: ll[0], lng: ll[1] };
+    if (!gps.halo) gps.halo = L.circle(ll, { radius: acc, color: '#1DA0AB', weight: 1, fillOpacity: 0.12, interactive: false }).addTo(mapa);
+    else gps.halo.setLatLng(ll).setRadius(acc);
+    cancelAnimationFrame(animEquipo); equipo.setLatLng(ll);
+    var el = equipo.getElement(); if (el) el.firstChild.classList.add('gps');
+    if (!gps.rastro) gps.rastro = L.polyline([], { color: '#1DA0AB', weight: 3, opacity: 0.75, interactive: false }).addTo(capa);
+    gps.rastro.addLatLng(ll);
+    if (gps.seguir) mapa.setView(ll, Math.max(mapa.getZoom(), 16), { animate: !reducido });
+    var dentroDe = NIVELES.filter(function (p) { return p.lat != null && recta(gps.pos, p) <= RADIO; })[0];
+    var elY = equipo.getElement(); if (elY) elY.firstChild.classList.toggle('dentro', !!dentroDe);
+    NIVELES.forEach(function (p) {
+      if (p.lat == null || (J.m[p.id] || {}).llegada || recta(gps.pos, p) > RADIO) return;
+      if (gps.objetivo === p.id) gps.objetivo = null;
+      lograr(p.id, 'llegada');
+      if (!hoja.open) abrir('nivel-' + p.id);
+    });
+    guiar();
+  }
+  function gpsError(err) { aviso(err && err.code === 1 ? 'Permite la ubicación en Ajustes › Privacidad › Localización' : 'Buscando señal GPS…'); }
+  function alternarGps() {
+    if (gps.id !== null && !gps.seguir) { gps.seguir = true; if (gps.pos) mapa.setView([gps.pos.lat, gps.pos.lng], 17); botones(); return; }
+    if (gps.id !== null) {
+      navigator.geolocation.clearWatch(gps.id); gps.id = null; gps.objetivo = null;
+      ['halo', 'guia'].forEach(function (k) { if (gps[k]) { gps[k].remove(); gps[k] = null; } });
+      gps.pos = null;
+      var el = equipo && equipo.getElement(); if (el) el.firstChild.classList.remove('gps', 'dentro');
+      moverEquipo(posEquipo(), true);
+      botones(); return;
+    }
+    if (!navigator.geolocation) { aviso('GPS no disponible en este navegador'); return; }
+    gps.seguir = true;
+    try { gps.id = navigator.geolocation.watchPosition(gpsOk, gpsError, { enableHighAccuracy: true, maximumAge: 4000, timeout: 20000 }); }
+    catch (e) { gps.id = null; aviso('GPS no disponible aquí'); }
+    if (gps.id !== null) aviso('Os sigo hasta el siguiente nivel');
+    botones(); guiar();
+  }
+
+  /* ---------- Varios ---------- */
+  function modoHotel(on) {
+    st.modoHotel = on;
+    $('#aviso-hotel').hidden = !on;
+    $('#mapa').classList.toggle('apuntar', on);
+  }
+  function refrescar() {
+    calcular(); hud();
+    var x = $('#niveles').scrollLeft;
+    carrusel(); $('#niveles').scrollLeft = x; vigilarCartas(); reloj();
+    dibujar(); guiar();
+    if (hoja.open && hoja.dataset.clave && !pintarHoja(hoja.dataset.clave)) volver();
+  }
+  function cambiarModo(m) {
+    if (!MODOS[m] || J.modo === m) return;
+    J.modo = m; guardarJ();
+    $$('[data-modo]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.modo === m)); });
+    refrescar(); $('#niveles').scrollLeft = 0; moverEquipo(posEquipo(), false); encuadrar();
+    aviso('Ruta ' + MODOS[m].nombre + ' · ' + MODOS[m].horas);
+  }
+  function filaJugador(nombre, i) {
+    return '<label class="jug">Jugador ' + (i + 1) + '<input type="text" maxlength="20" autocomplete="off" value="' + esc(nombre) + '" placeholder="' + (i === 0 ? 'Tu nombre' : 'Su nombre') + '"></label>';
+  }
+  /* ---------- Mis rutas: cuadro de mando inicial ---------- */
+  function hoyISO() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function diasHasta(iso) { return Math.round((new Date(iso + 'T12:00') - new Date(hoyISO() + 'T12:00')) / 864e5); }
+  function estadoRuta(r) {
+    var h = hoyISO();
+    if (h >= r.desde && h <= r.hasta) return { k: 'hoy', t: r.desde === r.hasta ? 'Hoy' : 'En curso' };
+    if (h < r.desde) { var n = diasHasta(r.desde); return { k: 'pronto', t: n === 1 ? 'Mañana' : 'Faltan ' + n + ' días' }; }
+    return { k: 'pasada', t: 'Terminada' };
+  }
+  function tarjetas() {
+    var toca = CATALOGO.filter(function (r) { return estadoRuta(r).k === 'hoy'; })[0] || CATALOGO.filter(function (r) { return estadoRuta(r).k === 'pronto'; })[0];
+    $('#rutas-hoy').textContent = 'Elegid la ruta · hoy es ' + new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+    $('#tarjetas').innerHTML = CATALOGO.map(function (r) {
+      var e = estadoRuta(r), es = toca && toca.id === r.id;
+      var boton = r.lista
+        ? '<button type="button" class="pill activa grande" data-a="entrar" data-id="' + r.id + '">' + ico('bandera') + (J.empezado ? 'Continuar' : 'Entrar') + '</button>' +
+          (J.empezado ? '<button type="button" class="pill" data-a="nombres">Cambiar nombres</button>' : '')
+        : '<button type="button" class="pill grande" disabled>' + ico('reloj-arena') + 'Próximamente</button>';
+      return '<article class="tarjeta' + (es ? ' toca' : '') + (r.lista ? '' : ' pronto') + '">' +
+        '<div class="tarjeta-ilu">' + ILU[r.ilu] + '<span class="chip">' + e.t + '</span>' + (es ? '<span class="chip toca-t">' + (e.k === 'hoy' ? 'Toca ahora' : 'La siguiente') + '</span>' : '') + '</div>' +
+        '<div class="tarjeta-c"><h3>' + esc(r.nombre) + '</h3><p class="fecha">' + esc(r.fechas) + '</p>' +
+        '<p class="lugares">' + r.lugares.map(function (l) { return '<span>' + esc(l) + '</span>'; }).join('') + '</p>' +
+        '<p>' + esc(r.texto) + '</p><div class="acciones">' + boton + '</div></div></article>';
+    }).join('');
+  }
+  function mostrarRutas(ver) {
+    if (ver) tarjetas();
+    $('#rutas').hidden = !ver;
+  }
+
+  function portada(ver) {
+    $('#portada').hidden = !ver;
+    if (ver) {
+      var lista = [J.equipo[0] || '', J.equipo[1] || ''];
+      $('#jugadores').innerHTML = lista.map(filaJugador).join('');
+      $('#portada-modos').innerHTML = selectorModo();
+      var d = new Date(), hoy = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      var cuando = hoy === RUTA.fecha ? 'de hoy' : (hoy < RUTA.fecha ? 'del ' + RUTA.fechaTexto.toLowerCase() : 'del ' + RUTA.fechaTexto.toLowerCase() + ', para recordarlo');
+      $('#portada-sub').textContent = 'Vuestro itinerario ' + cuando + ' convertido en juego. Elegid la ruta completa o la exprés. ' + RUTA.nota + '.';
+    }
+  }
+
+  /* ---------- Eventos ---------- */
+  document.addEventListener('click', function (ev) {
+    var t = ev.target.closest('button');
+    if (!t || t.disabled) return;
+    var d = t.dataset;
+    if (t.id !== 'b-capas' && !t.closest('#menu-capas')) menuCapas(false);
+    if (d.base) { if (mapa) ponerBase(d.base); menuCapas(false); $('#b-capas').focus(); return; }
+    if (d.modo) { cambiarModo(d.modo); return; }
+    if (d.nivel) { abrir('nivel-' + d.nivel); return; }
+    if (d.hoja) { abrir(d.hoja); return; }
+    if (d.comida) { st.comida = d.comida; guardar('comida', d.comida); aviso('Comida: ' + comidaElegida().nombre); refrescar(); return; }
+    var id = d.id;
+    switch (d.a) {
+      case 'llegada': lograr(id, 'llegada'); break;
+      case 'reto': lograr(id, 'reto'); break;
+      case 'llevar':
+        gps.objetivo = id; volver();
+        if (gps.id === null) alternarGps(); else guiar();
+        aviso('Rumbo a ' + PUNTOS[id].nombre); break;
+      case 'hotel': volver(); setTimeout(function () { modoHotel(true); }, 80); break;
+      case 'entrar':
+        mostrarRutas(false);
+        if (!J.empezado) portada(true);
+        if (mapa) { tamMapa(); encuadrar(); }
+        break;
+      case 'nombres': mostrarRutas(false); portada(true); break;
+      case 'copiar-reloj':
+        try { navigator.clipboard.writeText(RELOJ).then(function () { aviso('Enlace copiado: pégalo en Mensajes'); }, function () { aviso('Copia el enlace a mano'); }); }
+        catch (e) { aviso('Copia el enlace a mano'); }
+        break;
+      case 'horas-pdf':
+        Object.keys(J.horas).forEach(function (k) { if (k.indexOf(J.modo + ':') === 0) delete J.horas[k]; });
+        guardarJ(); refrescar(); aviso('Horario del PDF'); break;
+      case 'reiniciar':
+        if (!confirmar) { confirmar = true; pintarHoja('logros'); break; }
+        J = { equipo: J.equipo, empezado: true, modo: J.modo, m: {} }; guardarJ();
+        FOTOS = {}; try { if (db) db.transaction('fotos', 'readwrite').objectStore('fotos').clear(); } catch (e) { /* nada */ }
+        confirmar = false; refrescar(); moverEquipo(posEquipo(), false); aviso('Juego reiniciado'); break;
+    }
+  });
+  document.addEventListener('change', function (ev) {
+    var inp = ev.target;
+    if (inp.dataset && inp.dataset.hora) { cambiarHora(inp.dataset.hora, inp.value); return; }
+    if (!inp.dataset || !inp.dataset.foto || !inp.files || !inp.files[0]) return;
+    var id = inp.dataset.foto;
+    aviso('Guardando foto…');
+    reducirFoto(inp.files[0], function (data) {
+      if (data) guardarFoto(id, data);
+      if ((J.m[id] || {}).reto) refrescar(); else lograr(id, 'reto');
+    });
+  });
+  $('#form-portada').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    J.equipo = $$('#jugadores input').map(function (i) { return i.value.trim().slice(0, 20); });
+    J.empezado = true; guardarJ(); portada(false); hud();
+    aviso('¡Que empiece la aventura!');
+  });
+  $('#b-logo').addEventListener('click', function () { mostrarRutas(true); });
+  $('#m-logo').addEventListener('click', function () { if (gps.id !== null) { gps.seguir = false; botones(); } encuadrar(); });
+  $('#b-ruta').addEventListener('click', function () { if (gps.id !== null) { gps.seguir = false; botones(); } encuadrar(); });
+  $('#b-sigue').addEventListener('click', alternarGps);
+  $('#b-capas').addEventListener('click', function () { if (!mapa) return; menuCapas($('#menu-capas').hidden); });
+  document.addEventListener('pointerdown', function (ev) { if (!$('#menu-capas').hidden && !ev.target.closest('#menu-capas, #b-capas')) menuCapas(false); });
+  $('#b-cancelar').addEventListener('click', function () { modoHotel(false); });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') { if (!$('#rutas').hidden) { mostrarRutas(false); if (!J.empezado) portada(true); return; } if (!$('#menu-capas').hidden) { menuCapas(false); $('#b-capas').focus(); } if (st.modoHotel) modoHotel(false); if (!$('#portada').hidden && J.empezado) portada(false); } });
+  window.addEventListener('hashchange', rutaHash);
+  window.addEventListener('resize', tamMapa);
+  $('#norte').addEventListener('click', function () { girar(0, true); });
+
+  /* ---------- Inicio ---------- */
+  $('#portada-ilu').innerHTML = ILU.portada;
+  calcular(); hud(); carrusel(); iniciarMapa(); dibujar(); crearEquipo(); encuadrar(); vigilarCartas(); botones();
+  portada(false);
+  mostrarRutas(true);
+  (function () {
+    var a = reloj(), s = siguiente();
+    var c = document.querySelector('.carta[data-nivel="' + (a.id && a.id !== 'final' ? a.id : (s ? s.id : '')) + '"]');
+    var tira = $('#niveles');
+    if (c) tira.scrollLeft = c.offsetLeft - (tira.clientWidth - c.offsetWidth) / 2;
+  })();
+  setInterval(reloj, 15000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) reloj(); });
+  abrirDB().then(cargarFotos).then(function () { if (Object.keys(FOTOS).length) refrescar(); });
+  if (location.hash.length > 1) rutaHash();
+})();
+
+</script>
+</body>
+</html>
