@@ -22,7 +22,9 @@ Autor: **Juan Felipe Olivar Londoño**
 
 - **Dos rutas.** **Completa:** de 10:00 a 18:00, las 10 paradas del itinerario. **Exprés:** de 10:00 a 15:30, solo las prioridades del itinerario más la comida.
 - **Círculos por importancia.** Los grandes con doble aro son las prioridades si vais justos de tiempo.
-- **Sígueme.** Os sigue con el GPS y os guía hasta el siguiente nivel con una flecha, la distancia y los minutos a pie.
+- **Sígueme y Llévame.** Navegación a pie por las calles, como un GPS: una flecha grande dice «gira a la izquierda en 20 m por Rue du Taur», «sigue recto» o «a la derecha», y en el mapa se dibuja la ruta. Las rutas a pie las calcula OpenStreetMap (routing.openstreetmap.de). Si no hay conexión, una flecha de brújula apunta al destino.
+- **Copia de seguridad.** En el Resumen, «Guardar copia» guarda el progreso y las fotos en un archivo (Compartir › Guardar en Archivos) y «Recuperar copia» lo vuelve a cargar. «Dar por hechas las paradas anteriores» recupera de golpe las banderas de las paradas ya pasadas.
+- **Quitar y añadir paradas.** En el Resumen, la ✕ quita una parada (se puede recuperar). «Añadir parada» pide tocar el mapa, el nombre y la hora, y la parada entra en el juego como un nivel más.
 - **Resumen.** Se abre con el botón de las banderas o tocando el reloj. Muestra cómo vais, a qué hora llegasteis a cada sitio y si fuisteis en hora. Si cambia el plan, se toca una hora y todas las paradas siguientes se ajustan solas al nuevo horario.
 - **Norte y giro.** El mapa gira con dos dedos. Al tocar la N vuelve al norte. En el ordenador también gira con Mayús + arrastrar.
 - **Comida.** Se elige uno de los tres restaurantes y la ruta se recalcula.
@@ -58,4 +60,4 @@ Si cambias las horas, cámbialas también en `reloj.html` (mismo bloque **RUTA D
 
 Para mover una parada, en Google Maps mantén pulsado el sitio y copia las coordenadas.
 
-Mapas © OpenStreetMap y Esri · Leaflet 1.9.4 (licencia BSD-2).
+Mapas © OpenStreetMap y Esri · Rutas a pie: FOSSGIS / OSRM · Leaflet 1.9.4 (licencia BSD-2).

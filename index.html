@@ -138,10 +138,6 @@ button, input { font: inherit; }
 .reloj-c { display: grid; min-width: 0; }
 .reloj time { font-size: 24px; font-weight: 300; color: var(--dorado); line-height: 1.15; font-variant-numeric: tabular-nums; }
 #reloj-t { font-size: 12px; line-height: 1.35; }
-.guia { max-width: 100%; display: flex; align-items: center; gap: 8px; background: var(--head); border: 1px solid var(--turquesa); border-radius: 999px; padding: 6px 14px 6px 6px; color: var(--titulo); font-size: 13px; cursor: pointer; text-align: left; }
-.guia[hidden] { display: none; }
-.guia .flecha { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--acento); color: #fff; flex: none; transition: transform .4s; }
-#guia-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .herr { position: absolute; z-index: 1000; top: 10px; right: 10px; display: grid; gap: 6px; justify-items: end; }
 .herr .pill { background: var(--head); min-height: 40px; padding: 6px 13px; font-size: 13px; }
 .herr .pill[aria-pressed="true"] { background: var(--acento); }
@@ -221,7 +217,7 @@ button, input { font: inherit; }
 .res-reloj time { font-size: 30px; font-weight: 300; color: var(--dorado); font-variant-numeric: tabular-nums; }
 .xp.grande { height: 8px; }
 .itin { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.itin li { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 8px; padding: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+.itin li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
 .itin li.ahora { border-color: #2F8CFF; }
 .itin li.fin { color: var(--muted); }
 .itin input[type="time"] { width: 88px; min-height: 44px; padding: 4px 6px; background: var(--head); border: 1px solid var(--line); border-radius: 10px; color: var(--dorado); font-size: 16px; font-variant-numeric: tabular-nums; color-scheme: dark; }
@@ -236,6 +232,8 @@ button, input { font: inherit; }
 .itin li.ahora .est-pen { color: #6fb0ff; }
 @media (max-width: 380px) { .itin input[type="time"] { width: 80px; } }
 .enlace-reloj { padding: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; color: var(--turquesa-txt); font-size: 14px; overflow-wrap: anywhere; user-select: all; }
+.quitar { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: 50%; border: 1px solid var(--line); background: var(--head); color: var(--muted); cursor: pointer; }
+.itin li.quitada { opacity: .75; }
 .horario { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .horario button { display: grid; grid-template-columns: 52px 46px minmax(0, 1fr); align-items: center; gap: 8px; width: 100%; min-height: 50px; padding: 2px 0; background: none; border: 0; color: var(--titulo); text-align: left; cursor: pointer; }
 .horario time { font-variant-numeric: tabular-nums; color: var(--dorado); font-weight: 500; }
@@ -305,6 +303,22 @@ span.insignia { cursor: default; }
 @keyframes caer { to { transform: translateY(105vh) rotate(540deg); } }
 .toast { position: fixed; left: 50%; bottom: calc(210px + env(safe-area-inset-bottom)); z-index: 3000; transform: translate(-50%, 12px); opacity: 0; max-width: calc(100% - 32px); background: var(--head); color: var(--titulo); border: 1px solid var(--turquesa); border-radius: 999px; padding: 10px 18px; font-size: 14px; pointer-events: none; transition: opacity .2s, transform .2s; text-align: center; }
 .toast.ver { opacity: 1; transform: translate(-50%, 0); }
+.con-nav .toast { bottom: calc(320px + env(safe-area-inset-bottom)); }
+
+/* Navegación a pie (Llévame / Sígueme) */
+.nav { position: absolute; z-index: 1001; left: 10px; right: 10px; bottom: 30px; display: flex; align-items: stretch; gap: 8px; padding: 8px; background: var(--head); border: 1.5px solid var(--turquesa); border-radius: 22px; }
+.nav[hidden] { display: none; }
+.nav-cuerpo { flex: 1; display: flex; align-items: center; gap: 12px; padding: 0; background: none; border: 0; color: var(--titulo); text-align: left; cursor: pointer; }
+.nav-flecha { display: grid; place-items: center; width: 64px; height: 64px; flex: none; border-radius: 18px; background: var(--acento); transition: transform .4s ease; }
+.nav-flecha svg { width: 44px; height: 44px; fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.nav-txt { display: grid; gap: 1px; min-width: 0; }
+.nav-txt strong { font-size: 19px; font-weight: 500; line-height: 1.2; }
+#nav-s { font-size: 15px; color: var(--turquesa-txt); line-height: 1.3; }
+#nav-d { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav-x { align-self: center; }
+.navegando .norte-caja { bottom: 124px; }
+.navegando .m-logo { bottom: 124px; }
+.navegando .aviso-hotel { bottom: 124px; }
 
 /* Capas */
 .herr .pill { position: relative; }
@@ -347,11 +361,11 @@ span.insignia { cursor: default; }
   .modos { grid-template-columns: 1fr; }
 }
 @media (hover: hover) {
-  .pill:hover:not(:disabled), .opcion:hover, .redondo:hover, .norte:hover, .guia:hover, .modo:hover, .menu-capas button:hover, .reloj:hover, .banderas:hover { border-color: var(--turquesa); }
+  .pill:hover:not(:disabled), .opcion:hover, .redondo:hover, .norte:hover, .quitar:hover, .modo:hover, .menu-capas button:hover, .reloj:hover, .banderas:hover { border-color: var(--turquesa); }
   .carta:hover { transform: translateY(-2px); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .mk, .toast, .guia .flecha, .carta, .premio, .xp span { transition: none; }
+  .mk, .toast, .nav-flecha, .carta, .premio, .xp span { transition: none; }
   .mk.sig, .yo.gps .yo-punto, .reloj.ultimos .arco { animation: none; }
   .arco, .norte svg, #mapa.anim-giro, #mapa.anim-giro .leaflet-marker-icon > * { transition: none; }
 }
@@ -370,6 +384,15 @@ span.insignia { cursor: default; }
   <symbol id="i-ruta" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h6"/></symbol>
   <symbol id="i-capas" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5zM3 12.5l9 5 9-5M3 17l9 5 9-5"/></symbol>
   <symbol id="i-reloj-arena" viewBox="0 0 24 24"><path d="M6 3h12M6 21h12M7 3c0 5 10 6 10 9s-10 4-10 9M17 3c0 5-10 6-10 9s10 4 10 9"/></symbol>
+  <symbol id="i-mas" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="m-recto" viewBox="0 0 24 24"><path d="M12 21V4M6 10l6-6 6 6"/></symbol>
+  <symbol id="m-izq" viewBox="0 0 24 24"><path d="M16 21v-8a4 4 0 0 0-4-4H5M9 5L5 9l4 4"/></symbol>
+  <symbol id="m-der" viewBox="0 0 24 24"><path d="M8 21v-8a4 4 0 0 1 4-4h7M15 5l4 4-4 4"/></symbol>
+  <symbol id="m-lig-izq" viewBox="0 0 24 24"><path d="M15 21v-7L8 7M8 13V7h6"/></symbol>
+  <symbol id="m-lig-der" viewBox="0 0 24 24"><path d="M9 21v-7l7-7M16 13V7h-6"/></symbol>
+  <symbol id="m-vuelta" viewBox="0 0 24 24"><path d="M8 21V10a4 4 0 0 1 8 0v6M12 13l4 4 4-4"/></symbol>
+  <symbol id="m-llegada" viewBox="0 0 24 24"><circle cx="8" cy="3.6" r="1.4"/><path d="M8 5v14M9.5 5.5l9 3.5-9 3.5z"/><ellipse cx="8" cy="20" rx="4" ry="1.6"/></symbol>
+  <symbol id="m-brujula" viewBox="0 0 24 24"><path d="M12 3l6 17-6-4-6 4z"/></symbol>
   <symbol id="i-gps" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
   <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
   <symbol id="i-camara" viewBox="0 0 24 24"><path d="M3 7h3l2-3h8l2 3h3v12H3z"/><circle cx="12" cy="13" r="4"/></symbol>
@@ -397,7 +420,6 @@ span.insignia { cursor: default; }
   <button type="button" class="m-logo" id="m-logo" aria-label="Ver toda la ruta"><img src="logo.png" width="72" height="72" alt=""></button>
   <div class="panel-izq">
     <button type="button" class="reloj" data-hoja="resumen" aria-label="Resumen: cómo vais"><svg class="reloj-svg" viewBox="0 0 40 40" aria-hidden="true"><circle class="fondo" cx="20" cy="20" r="15.9"/><circle class="arco" id="reloj-anillo" cx="20" cy="20" r="15.9" pathLength="100"/></svg><span class="reloj-c"><time id="reloj-h">--:--</time><span id="reloj-t"></span></span></button>
-    <button type="button" class="guia" id="guia" hidden><span class="flecha" id="guia-flecha"><svg class="i" aria-hidden="true"><use href="#i-flecha"/></svg></span><span id="guia-t">Buscando GPS…</span></button>
   </div>
   <div class="herr">
     <button type="button" class="pill" id="b-ruta"><svg class="i" aria-hidden="true"><use href="#i-ruta"/></svg>Ruta</button>
@@ -405,11 +427,18 @@ span.insignia { cursor: default; }
     <button type="button" class="pill" id="b-sigue" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-gps"/></svg><span>Sígueme</span></button>
   </div>
   <div class="menu-capas" id="menu-capas" hidden></div>
+  <section class="nav" id="nav" hidden aria-live="polite" aria-label="Navegación a pie">
+    <button type="button" class="nav-cuerpo" id="nav-abrir">
+      <span class="nav-flecha" id="nav-flecha"><svg viewBox="0 0 24 24" aria-hidden="true"><use id="nav-icono" href="#m-recto"/></svg></span>
+      <span class="nav-txt"><strong id="nav-t">Buscando GPS…</strong><span id="nav-s"></span><small id="nav-d"></small></span>
+    </button>
+    <button type="button" class="redondo nav-x" id="nav-x" aria-label="Terminar navegación"><svg class="i" aria-hidden="true"><use href="#i-cerrar"/></svg></button>
+  </section>
   <div class="norte-caja">
     <button type="button" class="norte" id="norte" aria-label="Norte arriba"><svg viewBox="0 0 40 40" aria-hidden="true"><path class="aguja-n" d="M20 3l4 6h-8z"/><text x="20" y="28">N</text></svg></button>
   </div>
   <div class="mapa-pie"><div id="mapa-escala"></div><div id="mapa-creditos"></div></div>
-  <p class="aviso-hotel" id="aviso-hotel" hidden>Toca el mapa donde está el hotel · <button type="button" class="enlace" id="b-cancelar">Cancelar</button></p>
+  <p class="aviso-hotel" id="aviso-hotel" hidden><span id="aviso-hotel-t">Toca el mapa donde está el hotel</span> · <button type="button" class="enlace" id="b-cancelar">Cancelar</button></p>
 </main>
 
 <nav class="niveles" id="niveles" aria-label="Niveles del juego"></nav>
@@ -646,6 +675,11 @@ var ILU = (function () {
       '<g transform="translate(70 96)"><rect width="56" height="20" rx="4" fill="#c0392b"/><rect x="60" width="56" height="20" rx="4" fill="#c0392b"/><rect x="120" width="56" height="20" rx="4" fill="#c0392b"/>' +
       '<g fill="' + C.bl + '" opacity=".9"><rect x="6" y="4" width="12" height="7" rx="1"/><rect x="22" y="4" width="12" height="7" rx="1"/><rect x="38" y="4" width="12" height="7" rx="1"/><rect x="66" y="4" width="12" height="7" rx="1"/><rect x="82" y="4" width="12" height="7" rx="1"/><rect x="98" y="4" width="12" height="7" rx="1"/><rect x="126" y="4" width="12" height="7" rx="1"/><rect x="142" y="4" width="12" height="7" rx="1"/><rect x="158" y="4" width="12" height="7" rx="1"/></g></g>';
   };
+  var extra = function () {
+    return '<rect y="140" width="320" height="40" fill="' + C.suelo + '"/><path d="M0 146c80-12 160-12 320 0v34H0z" fill="' + C.tq2 + '" opacity=".5"/>' +
+      '<ellipse cx="160" cy="146" rx="46" ry="8" fill="none" stroke="#FEBF04" stroke-width="3"/><rect x="157" y="40" width="6" height="106" rx="3" fill="#FEBF04"/><circle cx="160" cy="36" r="8" fill="#FEBF04"/>' +
+      '<path d="M166 48l70 26-70 26z" fill="#FEBF04"/><g fill="' + C.oro + '" opacity=".5"><circle cx="70" cy="60" r="3"/><circle cx="250" cy="120" r="3"/><circle cx="90" cy="110" r="2"/></g>';
+  };
   var hotel = function () {
     var v = '', x, y;
     for (y = 54; y < 150; y += 24) for (x = 96; x < 224; x += 22) v += '<rect x="' + x + '" y="' + y + '" width="12" height="14" fill="' + ((x + y) % 3 ? C.oro : C.noche) + '" opacity="' + ((x + y) % 3 ? '.9' : '1') + '"/>';
@@ -672,7 +706,7 @@ var ILU = (function () {
   return {
     desayuno: marco(desayuno()), 'saint-sernin': marco(sernin()), capitole: marco(capitole()), 'victor-hugo': marco(mercado()), comida: marco(comida()),
     jacobins: marco(jacobins()), assezat: marco(assezat()), daurade: marco(pontneuf()), cafe: marco(violetas()),
-    hotel: marco(hotel(), C.noche), final: marco(concierto(), C.noche), portada: marco(portada()), leon: marco(leon()), alpes: marco(alpes())
+    hotel: marco(hotel(), C.noche), final: marco(concierto(), C.noche), portada: marco(portada()), leon: marco(leon()), extra: marco(extra()), alpes: marco(alpes())
   };
 })();
 
@@ -711,7 +745,7 @@ var ILU = (function () {
 
   /* ---------- Estado ---------- */
   var J = leer('juego2', null) || { equipo: ['', ''], empezado: false, modo: 'completa', m: {} };
-  J.horas = J.horas || {};
+  J.horas = J.horas || {}; J.extra = J.extra || []; J.quitadas = J.quitadas || {};
   var st = { comida: leer('comida', RUTA.comidas[0].id), hotel: leer('hotel', null), modoHotel: false };
   var guardarJ = function () { guardar('juego2', J); };
   var mis = function (id) { return J.m[id] || (J.m[id] = {}); };
@@ -722,9 +756,13 @@ var ILU = (function () {
   function calcular() {
     PUNTOS = {};
     var expres = J.modo === 'expres', prev = null;
-    NIVELES = RUTA.paradas.filter(function (p) { return !expres || (JUEGO[p.id] || {}).expres; }).map(function (p, i) {
+    var base = RUTA.paradas.filter(function (p) { return !expres || (JUEGO[p.id] || {}).expres; }).map(function (p) {
+      return Object.assign({}, p, expres ? { hora: JUEGO[p.id].expres } : {});
+    }).concat(J.extra.map(function (e) { return Object.assign({}, e); }))
+      .filter(function (p) { return !J.quitadas[J.modo + ':' + p.id]; });
+    base.sort(function (a, b) { return minutos((J.horas[J.modo + ':' + a.id]) || a.hora) - minutos((J.horas[J.modo + ':' + b.id]) || b.hora); });
+    NIVELES = base.map(function (p, i) {
       var q = Object.assign({}, p, { n: i + 1, tramo: null });
-      if (expres) q.hora = JUEGO[p.id].expres;
       q.horaPdf = q.hora;
       if (J.horas && J.horas[J.modo + ':' + p.id]) q.hora = J.horas[J.modo + ':' + p.id];
       if (p.eleccion) { var c = comidaElegida(); q.lat = c.lat; q.lng = c.lng; q.lugar = c.nombre + ' · ' + c.zona; }
@@ -826,6 +864,8 @@ var ILU = (function () {
   }
 
   /* ---------- Piezas visuales ---------- */
+  var iluDe = function (p) { return ILU[p.id] || ILU.extra; };
+  var juegoDe = function (p) { return JUEGO[p.id] || { insignia: p.nombre, reto: p.reto || 'Foto juntos en este sitio.' }; };
   function circulo(p) {
     var hecho = superado(p.id), sig = siguiente();
     return '<span class="mk n' + p.nivel + ' ruta' + (hecho ? ' ok' : '') + (sig && sig.id === p.id ? ' sig' : '') + '">' + (hecho ? ico('bandera') : (p.tipo === 'hotel' ? ico('hotel') : p.n)) + '</span>';
@@ -854,7 +894,7 @@ var ILU = (function () {
     $('#niveles').innerHTML = NIVELES.map(function (p) {
       var ok = superado(p.id), es = sig && sig.id === p.id;
       return '<button type="button" class="carta' + (ok ? ' ok' : '') + (es ? ' sig' : '') + '" data-nivel="' + p.id + '">' +
-        '<span class="carta-ilu">' + ILU[p.id] + '<span class="chip">' + p.hora + '</span>' + (ok ? '<span class="sello">' + ico('bandera') + '</span>' : '') + '</span>' +
+        '<span class="carta-ilu">' + iluDe(p) + '<span class="chip">' + p.hora + '</span>' + (ok ? '<span class="sello">' + ico('bandera') + '</span>' : '') + '</span>' +
         '<span class="carta-txt"><strong>' + esc(p.nombre) + '</strong><span class="carta-pie">' + marcas2(p.id) +
         '<span class="nv nv' + p.nivel + '">' + (ok ? 'Coronado' : (es ? 'Siguiente' : NIVEL[p.nivel])) + '</span></span></span><span class="ahora-t">Ahora</span></button>';
     }).join('') +
@@ -869,7 +909,7 @@ var ILU = (function () {
   }
 
   function nivelHtml(p) {
-    var g = JUEGO[p.id] || {}, m = J.m[p.id] || {};
+    var g = juegoDe(p), m = J.m[p.id] || {};
     var dist = gps.pos && p.lat != null ? andando(gps.pos, p) : null;
     var lleg = m.llegada ? '<p class="hecho-t">' + ico('check') + 'OK · ¡Dentro del círculo!</p>'
       : '<p>' + (dist != null ? 'Estáis a ' + metros(dist) + ' · ' + aPie(dist) + ' min. ' : (p.tramo ? 'Desde la parada anterior: ' + aPie(p.tramo) + ' min a pie. ' : '')) + 'Con «Sígueme», al entrar en el círculo de ' + RADIO + ' m se pone OK solo.</p>' +
@@ -884,7 +924,7 @@ var ILU = (function () {
     }).join('') + '</div>';
     if (p.tipo === 'hotel') extra = '<button type="button" class="pill" data-a="hotel">' + ico('hotel') + (st.hotel ? 'Cambiar hotel en el mapa' : 'Fijar hotel en el mapa') + '</button>';
     var sigN = NIVELES[p.n] || null;
-    return '<div class="hoja-hero">' + ILU[p.id] + '<button type="button" class="redondo cerrar" data-cerrar="1" aria-label="Cerrar">' + ico('cerrar') + '</button>' +
+    return '<div class="hoja-hero">' + iluDe(p) + '<button type="button" class="redondo cerrar" data-cerrar="1" aria-label="Cerrar">' + ico('cerrar') + '</button>' +
         '<span class="chip">Nivel ' + p.n + ' · ' + p.hora + (p.dur ? ' · ' + p.dur : '') + '</span>' + (superado(p.id) ? '<span class="sello grande">' + ico('bandera') + '</span>' : '') + '</div>' +
       '<div class="hoja-cuerpo">' +
         '<p class="tipo">' + ico(p.tipo) + TIPO[p.tipo] + ' · <span class="nv nv' + p.nivel + '">' + NIVEL[p.nivel] + '</span> · Insignia <strong class="dorado-t">' + esc(g.insignia || '') + '</strong></p>' +
@@ -942,12 +982,70 @@ var ILU = (function () {
         else est = '<span class="est-pen">' + (a.id === p.id ? 'Toca ahora' : 'Pendiente') + '</span>';
         return '<li class="' + (a.id === p.id ? 'ahora' : '') + '">' +
           '<input type="time" value="' + p.hora + '" data-hora="' + p.id + '" aria-label="Hora de ' + esc(p.nombre) + '">' +
-          '<button type="button" class="itin-n" data-nivel="' + p.id + '">' + circulo(p) + '<span><strong>' + esc(p.nombre) + '</strong>' + est + (p.hora !== p.horaPdf ? '<small>En el PDF: ' + p.horaPdf + '</small>' : '') + '</span></button></li>';
+          '<button type="button" class="itin-n" data-nivel="' + p.id + '">' + circulo(p) + '<span><strong>' + esc(p.nombre) + '</strong>' + est + (p.extra ? '<small>Añadida por vosotros</small>' : (p.hora !== p.horaPdf ? '<small>En el PDF: ' + p.horaPdf + '</small>' : '')) + '</span></button>' +
+          '<button type="button" class="quitar" data-quitar="' + p.id + '" aria-label="Quitar ' + esc(p.nombre) + '">' + ico('cerrar') + '</button></li>';
       }).join('') + '<li class="fin"><span class="itin-h">' + RUTA.epilogo.hora + '</span><span>' + esc(RUTA.epilogo.titulo) + '</span></li></ul>' +
-      (cambiadas ? '<button type="button" class="pill" data-a="horas-pdf">' + ico('reiniciar') + 'Volver al horario del PDF</button>' : '') +
+      (pendientesPasadas().length ? '<button type="button" class="pill activa" data-a="dar-hechas">' + ico('bandera') + 'Dar por hechas las ' + pendientesPasadas().length + ' paradas anteriores</button>' : '') +
+      '<div class="acciones"><button type="button" class="pill activa" data-a="anadir">' + ico('mas') + 'Añadir parada</button>' +
+      (cambiadas ? '<button type="button" class="pill" data-a="horas-pdf">' + ico('reiniciar') + 'Volver al horario del PDF</button>' : '') + '</div>' +
+      (quitadas().length ? '<h3 class="punto">Paradas quitadas</h3><ul class="itin">' + quitadas().map(function (p) {
+        return '<li class="quitada"><span class="itin-h">' + p.hora + '</span><span class="itin-n"><span><strong>' + esc(p.nombre) + '</strong></span></span><button type="button" class="pill" data-recuperar="' + p.id + '">Recuperar</button></li>';
+      }).join('') + '</ul>' : '') +
+      '<h3 class="punto">Copia de seguridad</h3><p class="nota">Guardad una copia de vuestro progreso y fotos en Archivos de vez en cuando. Si se pierde, se recupera desde aquí.</p>' +
+      '<div class="acciones"><button type="button" class="pill activa" data-a="copia">' + ico('check') + 'Guardar copia</button>' +
+      '<label class="pill">' + ico('reiniciar') + 'Recuperar copia<input type="file" accept=".json,application/json" data-restaurar="1" hidden></label></div>' +
       '<h3 class="punto">En el Apple Watch</h3><p class="nota">Enviaos por Mensajes este enlace y abridlo en el reloj: veréis la hora, qué toca y la cuenta atrás.</p>' +
       '<p class="enlace-reloj">' + RELOJ + '</p><button type="button" class="pill" data-a="copiar-reloj">' + ico('check') + 'Copiar enlace del reloj</button>' +
     '</div>';
+  }
+  function pendientesPasadas() {
+    var d = new Date(), m = d.getHours() * 60 + d.getMinutes();
+    if (hoyISO() !== RUTA.fecha) return [];
+    return NIVELES.filter(function (p, i) { var sig = NIVELES[i + 1]; return !superado(p.id) && sig && minutos(sig.hora) <= m; });
+  }
+  function hacerCopia() {
+    var datos = { app: 'mi-ruta', ruta: RUTA.id, fecha: new Date().toISOString(), juego: J, comida: st.comida, hotel: st.hotel, fotos: FOTOS };
+    var nombre = 'mi-ruta-copia-' + hoyISO() + '.json', blob = new Blob([JSON.stringify(datos)], { type: 'application/json' });
+    try {
+      var f = new File([blob], nombre, { type: 'application/json' });
+      if (navigator.canShare && navigator.canShare({ files: [f] })) {
+        navigator.share({ files: [f], title: 'Copia de Mi Ruta' }).then(function () { aviso('Copia guardada'); }, function () { /* cancelado */ });
+        return;
+      }
+    } catch (e) { /* sin compartir archivos */ }
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nombre;
+    document.body.appendChild(a); a.click(); a.remove();
+    aviso('Copia descargada');
+  }
+  function restaurarCopia(file) {
+    var lector = new FileReader();
+    lector.onload = function () {
+      try {
+        var d = JSON.parse(lector.result);
+        if (!d || d.app !== 'mi-ruta' || !d.juego) throw new Error('no');
+        J = d.juego; J.horas = J.horas || {}; J.extra = J.extra || []; J.quitadas = J.quitadas || {}; guardarJ();
+        if (d.comida) { st.comida = d.comida; guardar('comida', d.comida); }
+        if (d.hotel) { st.hotel = d.hotel; guardar('hotel', d.hotel); }
+        Object.keys(d.fotos || {}).forEach(function (k) { guardarFoto(k, d.fotos[k]); });
+        refrescar(); moverEquipo(posEquipo(), false); aviso('Copia recuperada');
+      } catch (e) { aviso('Ese archivo no es una copia de Mi Ruta'); }
+    };
+    lector.readAsText(file);
+  }
+  function quitadas() {
+    var expres = J.modo === 'expres';
+    return RUTA.paradas.filter(function (p) { return !expres || (JUEGO[p.id] || {}).expres; }).map(function (p) { return Object.assign({}, p, expres ? { hora: JUEGO[p.id].expres } : {}); })
+      .filter(function (p) { return J.quitadas[J.modo + ':' + p.id]; });
+  }
+  function nuevaHtml() {
+    var ult = NIVELES[NIVELES.length - 1], m = ult ? Math.min(minutos(ult.hora) + 30, 23 * 60) : 12 * 60;
+    var a = ahora(); if (a.id && a.id !== 'final') { var d = new Date(); m = d.getHours() * 60 + d.getMinutes() + 15; m = Math.ceil(m / 5) * 5; }
+    return '<div class="hoja-cuerpo"><div class="res-cab"><h2 id="hoja-t">Nueva parada</h2><button type="button" class="redondo" data-cerrar="1" aria-label="Cerrar">' + ico('cerrar') + '</button></div>' +
+      '<p class="nota">La habéis colocado en el mapa. Ponedle nombre y hora; entra en el juego como un nivel más.</p>' +
+      '<form class="equipo" id="form-nueva"><label class="jug">Nombre<input id="nueva-nombre" type="text" maxlength="40" required placeholder="Por ejemplo: Café de la plaza"></label>' +
+      '<label class="jug">Hora<input id="nueva-hora" type="time" required value="' + pad(Math.floor(m / 60) % 24) + ':' + pad(m % 60) + '"></label>' +
+      '<label class="jug">Reto (opcional)<input id="nueva-reto" type="text" maxlength="80" placeholder="Foto juntos en este sitio"></label>' +
+      '<button type="submit" class="pill activa grande">' + ico('bandera') + 'Añadir al juego</button></form></div>';
   }
   function retraso(real, plan) {
     var d = minutos(real) - minutos(plan);
@@ -987,6 +1085,7 @@ var ILU = (function () {
     var html = null;
     if (clave === 'logros') html = logrosHtml();
     else if (clave === 'resumen') html = resumenHtml();
+    else if (clave === 'nueva' && st.nueva) html = nuevaHtml();
     else if (/^nivel-/.test(clave) && PUNTOS[clave.slice(6)]) html = nivelHtml(PUNTOS[clave.slice(6)]);
     if (!html) return false;
     var abierta = hoja.open && hoja.dataset.clave === clave, sc = hoja.scrollTop;
@@ -998,11 +1097,11 @@ var ILU = (function () {
   }
   function abrir(clave) {
     if (location.hash === '#' + clave) { pintarHoja(clave); return; }
-    if (hoja.open && /^#(nivel-|logros|resumen)/.test(location.hash)) location.replace('#' + clave); /* una hoja sustituye a otra: Atrás vuelve al mapa */
+    if (hoja.open && /^#(nivel-|logros|resumen|nueva)/.test(location.hash)) location.replace('#' + clave); /* una hoja sustituye a otra: Atrás vuelve al mapa */
     else location.hash = clave;
   }
   function cerrarHoja() { if (hoja.open) hoja.close(); hoja.dataset.clave = ''; confirmar = false; }
-  function volver() { if (/^#(nivel-|logros|resumen)/.test(location.hash)) history.back(); else cerrarHoja(); }
+  function volver() { if (/^#(nivel-|logros|resumen|nueva)/.test(location.hash)) history.back(); else cerrarHoja(); }
   hoja.addEventListener('cancel', function (ev) { ev.preventDefault(); volver(); });
   hoja.addEventListener('click', function (ev) { if (ev.target === hoja || ev.target.closest('[data-cerrar]')) volver(); });
   function rutaHash() {
@@ -1079,7 +1178,9 @@ var ILU = (function () {
     capa = L.layerGroup().addTo(mapa);
     mapa.on('click', function (ev) {
       if (!st.modoHotel) return;
-      st.hotel = [+ev.latlng.lat.toFixed(5), +ev.latlng.lng.toFixed(5)];
+      var punto = [+ev.latlng.lat.toFixed(5), +ev.latlng.lng.toFixed(5)];
+      if (st.modoHotel === 'nueva') { st.nueva = punto; modoHotel(false); abrir('nueva'); return; }
+      st.hotel = punto;
       guardar('hotel', st.hotel); modoHotel(false); aviso('Hotel guardado'); refrescar();
     });
     gestos();
@@ -1262,23 +1363,97 @@ var ILU = (function () {
   function botones() {
     $('#b-sigue').setAttribute('aria-pressed', String(gps.id !== null));
     $('#b-sigue span').textContent = gps.id !== null && !gps.seguir ? 'Centrar' : 'Sígueme';
-    $('#guia').hidden = gps.id === null;
   }
   function objetivo() {
     if (gps.objetivo && PUNTOS[gps.objetivo]) return PUNTOS[gps.objetivo];
     return NIVELES.filter(function (p) { return p.lat != null && !(J.m[p.id] || {}).llegada; })[0] || null;
   }
-  function guiar() {
-    if (!gps.pos || !mapa) return;
-    var o = objetivo();
-    if (!o) { $('#guia-t').textContent = '¡Ruta completada!'; if (gps.guia) gps.guia.setLatLngs([]); return; }
-    var d = andando(gps.pos, o);
-    $('#guia-flecha').style.transform = 'rotate(' + Math.round(rumbo(gps.pos, o) + ROT) + 'deg)';
-    $('#guia-t').textContent = metros(d) + ' · ' + aPie(d) + ' min · ' + o.nombre;
-    $('#guia').dataset.hoja = 'nivel-' + o.id;
-    if (!gps.guia) gps.guia = L.polyline([], { color: '#3CC0CA', weight: 3, dashArray: '6 8', interactive: false }).addTo(mapa);
-    gps.guia.setLatLngs([[gps.pos.lat, gps.pos.lng], [o.lat, o.lng]]);
+  /* ---------- Navegación a pie: flecha y calles, como un GPS ---------- */
+  var OSRM = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot/';
+  var nav = { dest: null, ruta: null, pasos: [], paso: 1, pidiendo: false, ultimo: 0, fallo: false };
+  var rumboDisp = null; /* hacia dónde mira el móvil (brújula) */
+  var GIROS = {
+    left: ['m-izq', 'Gira a la izquierda'], right: ['m-der', 'Gira a la derecha'],
+    'slight left': ['m-lig-izq', 'Ligeramente a la izquierda'], 'slight right': ['m-lig-der', 'Ligeramente a la derecha'],
+    'sharp left': ['m-izq', 'Gira del todo a la izquierda'], 'sharp right': ['m-der', 'Gira del todo a la derecha'],
+    straight: ['m-recto', 'Sigue recto'], uturn: ['m-vuelta', 'Da la vuelta']
+  };
+  function activarBrujula() {
+    var oir = function () {
+      window.addEventListener('deviceorientation', function (e) {
+        if (e.webkitCompassHeading != null) rumboDisp = e.webkitCompassHeading;
+        else if (e.absolute && e.alpha != null) rumboDisp = (360 - e.alpha) % 360;
+      }, true);
+    };
+    try {
+      if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission().then(function (r) { if (r === 'granted') oir(); }, function () { /* sin brújula */ });
+      } else if (window.DeviceOrientationEvent) oir();
+    } catch (e) { /* sin brújula */ }
   }
+  function pedirRuta(o) {
+    if (nav.pidiendo || !gps.pos) return;
+    nav.pidiendo = true; nav.ultimo = Date.now(); nav.dest = o.id;
+    var url = OSRM + gps.pos.lng.toFixed(6) + ',' + gps.pos.lat.toFixed(6) + ';' + o.lng.toFixed(6) + ',' + o.lat.toFixed(6) + '?overview=full&geometries=geojson&steps=true';
+    var ctrl = window.AbortController ? new AbortController() : null, corte = setTimeout(function () { if (ctrl) ctrl.abort(); }, 8000);
+    fetch(url, ctrl ? { signal: ctrl.signal } : {}).then(function (r) { return r.json(); }).then(function (js) {
+      clearTimeout(corte); nav.pidiendo = false;
+      var rt = js && js.code === 'Ok' && js.routes && js.routes[0];
+      if (!rt || nav.dest !== o.id) { nav.fallo = true; guiar(); return; }
+      nav.fallo = false;
+      nav.ruta = rt.geometry.coordinates.map(function (c) { return [c[1], c[0]]; });
+      nav.pasos = rt.legs[0].steps.map(function (s) { return { lat: s.maneuver.location[1], lng: s.maneuver.location[0], tipo: s.maneuver.type, mod: s.maneuver.modifier || 'straight', nombre: s.name || '' }; });
+      nav.paso = Math.min(1, nav.pasos.length - 1);
+      guiar();
+    }).catch(function () { clearTimeout(corte); nav.pidiendo = false; nav.fallo = true; nav.ultimo = Date.now(); guiar(); });
+  }
+  function fueraDeRuta() {
+    if (!nav.ruta || !gps.pos) return true;
+    var min = Infinity;
+    for (var i = 0; i < nav.ruta.length; i++) { var d = recta(gps.pos, { lat: nav.ruta[i][0], lng: nav.ruta[i][1] }); if (d < min) min = d; }
+    return min > 40;
+  }
+  function pintarNav(icono, t, s, d, giro) {
+    $('#nav-icono').setAttribute('href', '#' + icono);
+    $('#nav-flecha').style.transform = giro == null ? '' : 'rotate(' + Math.round(giro) + 'deg)';
+    $('#nav-t').textContent = t; $('#nav-s').textContent = s; $('#nav-d').textContent = d;
+  }
+  function guiar() {
+    var activo = gps.id !== null;
+    $('#nav').hidden = !activo;
+    $('.mapa-zona').classList.toggle('navegando', activo);
+    document.body.classList.toggle('con-nav', activo);
+    if (!activo || !mapa) return;
+    if (!gps.pos) { pintarNav('m-brujula', 'Buscando GPS…', 'Salid a un sitio despejado', '', null); return; }
+    var o = objetivo();
+    if (!o) { pintarNav('m-llegada', '¡Ruta completada!', 'Todas las paradas hechas', '', null); if (gps.guia) gps.guia.setLatLngs([]); return; }
+    var total = andando(gps.pos, o);
+    $('#nav-abrir').dataset.hoja = 'nivel-' + o.id;
+    var resumen = o.nombre + ' · ' + metros(total) + ' · ' + aPie(total) + ' min';
+    /* pedir ruta por calles si cambia el destino o nos salimos de ella */
+    if (nav.dest !== o.id) { nav.ruta = null; nav.pasos = []; pedirRuta(o); }
+    else if (!nav.pidiendo && Date.now() - nav.ultimo > 15000 && (nav.fallo || fueraDeRuta())) pedirRuta(o);
+    if (!gps.guia) gps.guia = L.polyline([], { color: '#3CC0CA', weight: 5, opacity: 0.9, interactive: false }).addTo(mapa);
+    if (nav.ruta && nav.pasos.length > 1) {
+      gps.guia.setStyle({ dashArray: null });
+      gps.guia.setLatLngs(nav.ruta);
+      while (nav.paso < nav.pasos.length - 1 && recta(gps.pos, nav.pasos[nav.paso]) < 18) nav.paso++;
+      var p = nav.pasos[nav.paso], dp = recta(gps.pos, p), sig = nav.pasos[nav.paso + 1];
+      var calle = p.nombre ? ' por ' + p.nombre : '';
+      if (p.tipo === 'arrive') { pintarNav('m-llegada', dp < 25 ? '¡Habéis llegado!' : 'Llegáis en ' + metros(dp), o.nombre, resumen, null); return; }
+      var giro = GIROS[p.mod] || GIROS.straight;
+      if (dp <= 45) pintarNav(giro[0], giro[1], 'En ' + metros(dp) + calle, resumen, null);
+      else pintarNav('m-recto', 'Sigue recto ' + metros(dp), 'Luego: ' + giro[1].toLowerCase() + calle, resumen, null);
+      if (sig && dp <= 45 && sig.tipo !== 'arrive') $('#nav-d').textContent = 'Después: ' + (GIROS[sig.mod] || GIROS.straight)[1].toLowerCase() + (sig.nombre ? ' por ' + sig.nombre : '') + ' · ' + resumen;
+    } else {
+      /* sin ruta por calles: flecha de brújula hacia el destino */
+      gps.guia.setStyle({ dashArray: '6 8' });
+      gps.guia.setLatLngs([[gps.pos.lat, gps.pos.lng], [o.lat, o.lng]]);
+      var rb = rumbo(gps.pos, o), rel = rumboDisp != null ? rb - rumboDisp : rb + ROT;
+      pintarNav('m-brujula', nav.pidiendo ? 'Calculando la ruta…' : 'Hacia allí, en línea recta', rumboDisp != null ? 'La flecha apunta al destino desde donde miráis' : 'La flecha apunta al destino en el mapa', resumen, rel);
+    }
+  }
+  setInterval(function () { if (gps.id !== null && nav.ruta === null && rumboDisp != null) guiar(); }, 1000);
   function gpsOk(pos) {
     if (!mapa) return;
     var ll = [pos.coords.latitude, pos.coords.longitude], acc = pos.coords.accuracy || 30;
@@ -1306,12 +1481,14 @@ var ILU = (function () {
     if (gps.id !== null) {
       navigator.geolocation.clearWatch(gps.id); gps.id = null; gps.objetivo = null;
       ['halo', 'guia'].forEach(function (k) { if (gps[k]) { gps[k].remove(); gps[k] = null; } });
+      nav.dest = null; nav.ruta = null; nav.pasos = [];
       gps.pos = null;
       var el = equipo && equipo.getElement(); if (el) el.firstChild.classList.remove('gps', 'dentro');
       moverEquipo(posEquipo(), true);
-      botones(); return;
+      botones(); guiar(); return;
     }
     if (!navigator.geolocation) { aviso('GPS no disponible en este navegador'); return; }
+    activarBrujula();
     gps.seguir = true;
     try { gps.id = navigator.geolocation.watchPosition(gpsOk, gpsError, { enableHighAccuracy: true, maximumAge: 4000, timeout: 20000 }); }
     catch (e) { gps.id = null; aviso('GPS no disponible aquí'); }
@@ -1320,8 +1497,9 @@ var ILU = (function () {
   }
 
   /* ---------- Varios ---------- */
-  function modoHotel(on) {
-    st.modoHotel = on;
+  function modoHotel(on, para) {
+    st.modoHotel = on ? (para || 'hotel') : false;
+    $('#aviso-hotel-t').textContent = para === 'nueva' ? 'Toca el mapa donde está la nueva parada' : 'Toca el mapa donde está el hotel';
     $('#aviso-hotel').hidden = !on;
     $('#mapa').classList.toggle('apuntar', on);
   }
@@ -1391,6 +1569,14 @@ var ILU = (function () {
     var d = t.dataset;
     if (t.id !== 'b-capas' && !t.closest('#menu-capas')) menuCapas(false);
     if (d.base) { if (mapa) ponerBase(d.base); menuCapas(false); $('#b-capas').focus(); return; }
+    if (d.quitar) {
+      var pq = PUNTOS[d.quitar];
+      if (pq && pq.extra) J.extra = J.extra.filter(function (e) { return e.id !== d.quitar; });
+      else J.quitadas[J.modo + ':' + d.quitar] = 1;
+      if (gps.objetivo === d.quitar) gps.objetivo = null;
+      guardarJ(); refrescar(); aviso('Quitada: ' + (pq ? pq.nombre : '')); return;
+    }
+    if (d.recuperar) { delete J.quitadas[J.modo + ':' + d.recuperar]; guardarJ(); refrescar(); aviso('Parada recuperada'); return; }
     if (d.modo) { cambiarModo(d.modo); return; }
     if (d.nivel) { abrir('nivel-' + d.nivel); return; }
     if (d.hoja) { abrir(d.hoja); return; }
@@ -1400,10 +1586,18 @@ var ILU = (function () {
       case 'llegada': lograr(id, 'llegada'); break;
       case 'reto': lograr(id, 'reto'); break;
       case 'llevar':
-        gps.objetivo = id; volver();
+        gps.objetivo = id; nav.dest = null; volver(); activarBrujula();
         if (gps.id === null) alternarGps(); else guiar();
         aviso('Rumbo a ' + PUNTOS[id].nombre); break;
       case 'hotel': volver(); setTimeout(function () { modoHotel(true); }, 80); break;
+      case 'dar-hechas': {
+        var lista = pendientesPasadas();
+        lista.forEach(function (p) { var mm = mis(p.id); mm.llegada = 1; mm.reto = 1; mm.hora = mm.hora || p.hora; });
+        guardarJ(); refrescar(); moverEquipo(posEquipo(), true);
+        premio(0, lista.length + ' banderas recuperadas', true); break;
+      }
+      case 'copia': hacerCopia(); break;
+      case 'anadir': volver(); setTimeout(function () { modoHotel(true, 'nueva'); }, 80); break;
       case 'entrar':
         mostrarRutas(false);
         if (!J.empezado) portada(true);
@@ -1419,7 +1613,7 @@ var ILU = (function () {
         guardarJ(); refrescar(); aviso('Horario del PDF'); break;
       case 'reiniciar':
         if (!confirmar) { confirmar = true; pintarHoja('logros'); break; }
-        J = { equipo: J.equipo, empezado: true, modo: J.modo, m: {} }; guardarJ();
+        J = { equipo: J.equipo, empezado: true, modo: J.modo, m: {}, horas: J.horas, extra: J.extra, quitadas: J.quitadas }; guardarJ();
         FOTOS = {}; try { if (db) db.transaction('fotos', 'readwrite').objectStore('fotos').clear(); } catch (e) { /* nada */ }
         confirmar = false; refrescar(); moverEquipo(posEquipo(), false); aviso('Juego reiniciado'); break;
     }
@@ -1427,6 +1621,7 @@ var ILU = (function () {
   document.addEventListener('change', function (ev) {
     var inp = ev.target;
     if (inp.dataset && inp.dataset.hora) { cambiarHora(inp.dataset.hora, inp.value); return; }
+    if (inp.dataset && inp.dataset.restaurar && inp.files && inp.files[0]) { restaurarCopia(inp.files[0]); return; }
     if (!inp.dataset || !inp.dataset.foto || !inp.files || !inp.files[0]) return;
     var id = inp.dataset.foto;
     aviso('Guardando foto…');
@@ -1434,6 +1629,16 @@ var ILU = (function () {
       if (data) guardarFoto(id, data);
       if ((J.m[id] || {}).reto) refrescar(); else lograr(id, 'reto');
     });
+  });
+  document.addEventListener('submit', function (ev) {
+    if (ev.target.id !== 'form-nueva') return;
+    ev.preventDefault();
+    var nombre = $('#nueva-nombre').value.trim().slice(0, 40), hora = $('#nueva-hora').value, reto = $('#nueva-reto').value.trim().slice(0, 80);
+    if (!nombre || !/^\d{2}:\d{2}$/.test(hora) || !st.nueva) return;
+    var id = 'extra-' + Date.now().toString(36);
+    J.extra.push({ id: id, extra: true, nombre: nombre, hora: hora, lat: st.nueva[0], lng: st.nueva[1], tipo: 'paseo', nivel: 2, dur: '', texto: 'Parada añadida por vosotros.', reto: reto || 'Foto juntos en este sitio.' });
+    st.nueva = null; guardarJ();
+    volver(); setTimeout(function () { refrescar(); aviso('Añadida: ' + hora + ' · ' + nombre); }, 80);
   });
   $('#form-portada').addEventListener('submit', function (ev) {
     ev.preventDefault();
@@ -1445,6 +1650,7 @@ var ILU = (function () {
   $('#m-logo').addEventListener('click', function () { if (gps.id !== null) { gps.seguir = false; botones(); } encuadrar(); });
   $('#b-ruta').addEventListener('click', function () { if (gps.id !== null) { gps.seguir = false; botones(); } encuadrar(); });
   $('#b-sigue').addEventListener('click', alternarGps);
+  $('#nav-x').addEventListener('click', function () { if (gps.id !== null) { gps.seguir = true; alternarGps(); } });
   $('#b-capas').addEventListener('click', function () { if (!mapa) return; menuCapas($('#menu-capas').hidden); });
   document.addEventListener('pointerdown', function (ev) { if (!$('#menu-capas').hidden && !ev.target.closest('#menu-capas, #b-capas')) menuCapas(false); });
   $('#b-cancelar').addEventListener('click', function () { modoHotel(false); });
@@ -1466,8 +1672,10 @@ var ILU = (function () {
   })();
   setInterval(reloj, 15000);
   document.addEventListener('visibilitychange', function () { if (!document.hidden) reloj(); });
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* nada */ }
   abrirDB().then(cargarFotos).then(function () { if (Object.keys(FOTOS).length) refrescar(); });
-  if (location.hash.length > 1) rutaHash();
+  /* al abrir se empieza en Mis rutas: no se reabre una ventana antigua */
+  if (/^#(nivel-|logros|resumen|nueva)/.test(location.hash)) history.replaceState(null, "", location.pathname + location.search);
 })();
 
 </script>
