@@ -86,6 +86,10 @@ button, input { font: inherit; }
 .yo-punto { position: absolute; left: 3px; bottom: 1px; width: 18px; height: 18px; border-radius: 50%; background: var(--punto); border: 3px solid #fff; box-shadow: 0 0 0 1px rgba(11, 23, 34, .5); }
 .yo-cono { position: absolute; left: -36px; top: -14px; width: 96px; height: 96px; display: none; transform: rotate(var(--rumbo, 0deg)); transform-origin: 50% 50%; transition: transform .15s linear; pointer-events: none; }
 .yo.con-rumbo .yo-cono { display: block; }
+.yo-cono path { fill: none; stroke-linecap: round; }
+.cono-linea { stroke: url(#cono-l); stroke-width: 4; }
+.cono-arco { stroke: #2F8CFF; stroke-width: 4.5; }
+.cono-arco2 { stroke: #2F8CFF; stroke-width: 3; opacity: .45; }
 .yo-bandera { position: absolute; left: 3px; top: 0; width: 26px; height: 34px; overflow: visible; }
 .yo-bandera .mastil { stroke: var(--bandera); stroke-width: 2.4; stroke-linecap: round; fill: none; }
 .yo-bandera .pomo, .yo-bandera .tela { fill: var(--bandera); }
@@ -1302,7 +1306,7 @@ var ILU = (function () {
   }
   function crearEquipo() {
     if (!mapa || equipo) return;
-    var html = '<span class="yo"><svg class="yo-cono" viewBox="0 0 80 80" aria-hidden="true"><defs><radialGradient id="cono-g" cx="40" cy="40" r="40" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2F8CFF" stop-opacity=".9"/><stop offset="1" stop-color="#2F8CFF" stop-opacity="0"/></radialGradient></defs><path d="M40 40L22.1 2.8A40 40 0 0 1 57.9 2.8z" fill="url(#cono-g)"/></svg><svg class="yo-bandera" viewBox="0 0 26 34" aria-hidden="true"><path class="mastil" d="M9 31V5"/><circle class="pomo" cx="9" cy="4" r="2.4"/><path class="tela" d="M10.5 6.5L24 11.5 10.5 16.5z"/></svg><span class="yo-punto"></span><span class="yo-ok">OK</span></span>';
+    var html = '<span class="yo"><svg class="yo-cono" viewBox="0 0 80 80" aria-hidden="true"><defs><linearGradient id="cono-l" x1="40" y1="30" x2="40" y2="3" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2F8CFF"/><stop offset="1" stop-color="#2F8CFF" stop-opacity="0"/></linearGradient></defs><path class="cono-linea" d="M40 29V3"/><path class="cono-arco" d="M28.43 26.21A18 18 0 0 1 51.57 26.21"/><path class="cono-arco2" d="M27 17.48A26 26 0 0 1 53 17.48"/></svg><svg class="yo-bandera" viewBox="0 0 26 34" aria-hidden="true"><path class="mastil" d="M9 31V5"/><circle class="pomo" cx="9" cy="4" r="2.4"/><path class="tela" d="M10.5 6.5L24 11.5 10.5 16.5z"/></svg><span class="yo-punto"></span><span class="yo-ok">OK</span></span>';
     equipo = L.marker(posEquipo(), { icon: L.divIcon({ className: 'mk-caja', html: html, iconSize: [40, 44], iconAnchor: [12, 34] }), interactive: false, keyboard: false, zIndexOffset: 3000 }).addTo(mapa);
   }
   function moverEquipo(dest, animar) {
