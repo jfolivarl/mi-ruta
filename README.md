@@ -6,13 +6,26 @@ Cada parada es un **nivel**, con su ilustración y un texto corto. El **punto az
 
 La app va con la **hora real**: dice qué toca ahora, cuánto queda (un anillo que se vacía y se desvanece) y si vais con retraso.
 
-Al abrir la app sale **Mis rutas**, el cuadro de mando inicial. Hay una tarjeta por viaje, con la fecha, los lugares y el estado («Hoy», «Faltan 14 días» o «Terminada»). La que toca según la fecha va marcada y desde ella se entra al juego.
+Al abrir la app sale **Mis rutas**, el cuadro de mando inicial. Hay una tarjeta por viaje, con la fecha, los lugares y el estado («Hoy», «Faltan 14 días» o «Terminada»). La que toca según la fecha va marcada y desde ella se entra al juego. Arriba hay un **filtro por país** (Todos, España, Francia, Italia, Suiza).
+
+**Conquista Zaragoza** no tiene fecha fija: se juega el día que elijáis, con la hora real. Recorre el Pilar, el Puente de Piedra, la Seo, el Mercado Central, el tapeo de El Tubo (a elegir entre Bodegas Almau, Doña Casta y Casa Pascualillo), la plaza de España y la Aljafería, y termina con el Pilar iluminado. Cada parada tiene su propio dibujo. El progreso de cada ruta se guarda por separado.
+
+**Viaje de Navidad (27–31 de diciembre).** Cuatro rutas sueltas. **Conquista Lugano** (28, mañana): Ayuntamiento y Piazza della Riforma, mercadillos, lago, Parco Ciani y su puerta al lago, funicular del Monte Brè. **Conquista Como** (28, tarde): Duomo, Città dei Balocchi y el lago iluminado. **Tren Bernina** (29): St. Moritz y el Bernina Express (glaciar de Morteratsch, curva de Montebello, Lago Bianco, Alp Grüm) hasta Tirano. **Conquista Milán** (30): Duomo, Galleria, la Scala, el Camparino, comida a elegir entre Luini, Spontini o Trattoria Milanese, y Aperol en los Navigli. Las horas del bus y del tren son orientativas: se cambian tocándolas en el Resumen.
+
+El filtro de Mis rutas lleva la banderita de cada país.
+
+**Conquista Valladolid** y **Conquista León** son rutas cortas (unas cinco horas), también sin fecha fija y con un dibujo para cada parada. Valladolid: Plaza Mayor, San Pablo y San Gregorio, la catedral y la Antigua, pinchos (Los Zagales, Villa Paramesa o Jero) y el Campo Grande. León: la catedral, Casa Botines, San Isidoro, tapeo en el Barrio Húmedo (El Rebote, La Bicha o El Flechazo) y San Marcos.
 
 | Ruta | Fechas | Estado |
 |---|---|---|
+| Conquista Zaragoza | Cuando queráis (un día a pie) | Lista |
 | Conquista Toulouse | 21 de noviembre de 2026 | Lista |
-| Valladolid y León | 5–9 de diciembre de 2026 | Próximamente |
-| Milán, Lugano, Como y Bernina Express (Nochevieja en los Navigli) | 27–31 de diciembre de 2026 | Próximamente |
+| Conquista Valladolid | Cuando queráis (ruta corta) | Lista |
+| Conquista León | Cuando queráis (ruta corta) | Lista |
+| Conquista Lugano | 28 de diciembre de 2026 (mañana) | Lista |
+| Conquista Como | 28 de diciembre de 2026 (tarde) | Lista |
+| Tren Bernina | 29 de diciembre de 2026 | Lista |
+| Conquista Milán | 30 de diciembre de 2026 | Lista |
 
 Web: https://jfolivarl.github.io/mi-ruta/
 
@@ -29,7 +42,6 @@ Autor: **Juan Felipe Olivar Londoño**
 - **Norte y giro.** El mapa gira con dos dedos. Al tocar la N vuelve al norte. En el ordenador también gira con Mayús + arrastrar.
 - **Comida.** Se elige uno de los tres restaurantes y la ruta se recalcula.
 - **Hotel.** Se fija tocando el mapa.
-- **Apple Watch.** La página `reloj.html` está hecha para el reloj: muestra la hora, qué toca, la cuenta atrás y el horario. El Apple Watch no tiene Safari: os enviáis el enlace por Mensajes y lo abrís en el reloj. En el Resumen hay un botón para copiarlo.
 - **Recompensas.** XP, rangos, insignias y un **álbum** con las fotos de los retos.
 - **Capas del mapa.** Azul, Callejero, Relieve y Satélite. Abajo aparecen la escala y el autor, como en Mis viajes.
 - **Todo dentro de la app.** Se instala en la pantalla de inicio, y el progreso y las fotos se guardan solo en el móvil.
@@ -39,7 +51,6 @@ Autor: **Juan Felipe Olivar Londoño**
 | Archivo | Para qué sirve |
 |---|---|
 | `index.html` | Todo el juego: estilo, ilustraciones, datos de la ruta y funcionamiento |
-| `reloj.html` | Versión para el Apple Watch: hora, qué toca, cuenta atrás y horario |
 | `logo.png` | Logo de Mi Ruta (cabecera, portada y mapa) |
 | `leaflet.js`, `leaflet.css`, `LICENSE-leaflet.txt` | Mapa Leaflet 1.9.4 |
 | `manifest.webmanifest` | Instalarla como app |
@@ -52,11 +63,11 @@ Todo se cambia dentro de `index.html`:
 
 - **MIS RUTAS**: las tarjetas del cuadro de mando. Para añadir un viaje, se copia una tarjeta y se cambian las fechas y los textos.
 
+- **RUTA POR ZARAGOZA**: paradas, horas, textos, retos y los tres bares de El Tubo. **ILUSTRACIONES DE ZARAGOZA**: sus dibujos.
 - **RUTA DE MAÑANA**: fecha, paradas, horas, textos, coordenadas (`lat` y `lng`), prioridad (`nivel` 3, 2 o 1) y restaurantes.
 - **EL JUEGO**: el reto de cada nivel, su insignia y las horas de la ruta exprés.
 - **ILUSTRACIONES**: los dibujos de cada nivel.
 
-Si cambias las horas, cámbialas también en `reloj.html` (mismo bloque **RUTA DE MAÑANA**).
 
 Para mover una parada, en Google Maps mantén pulsado el sitio y copia las coordenadas.
 

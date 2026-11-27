@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0b1722">
 <title>Mi Ruta · Conquista Toulouse</title>
-<meta name="description" content="Mi Ruta: un juego para recorrer Toulouse a pie en pareja, con niveles, misiones y álbum de fotos.">
+<meta name="description" content="Mi Ruta: un juego para recorrer ciudades a pie en pareja (Toulouse, Zaragoza, Valladolid, León…), con niveles, misiones y álbum de fotos.">
 <link rel="canonical" href="https://jfolivarl.github.io/mi-ruta/">
 <meta property="og:title" content="Mi Ruta · Conquista Toulouse">
 <meta property="og:description" content="Un juego de ruta a pie por Toulouse: niveles, misiones y álbum.">
@@ -237,7 +237,6 @@ button, input { font: inherit; }
 .est-pen { color: var(--muted); font-size: 13px; }
 .itin li.ahora .est-pen { color: #6fb0ff; }
 @media (max-width: 380px) { .itin input[type="time"] { width: 80px; } }
-.enlace-reloj { padding: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; color: var(--turquesa-txt); font-size: 14px; overflow-wrap: anywhere; user-select: all; }
 .quitar { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: 50%; border: 1px solid var(--line); background: var(--head); color: var(--muted); cursor: pointer; }
 .itin li.quitada { opacity: .75; }
 .horario { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
@@ -269,6 +268,11 @@ span.insignia { cursor: default; }
 .rutas-logo { width: 76px; height: 76px; flex: none; }
 .rutas-cab h1 { font-size: clamp(30px, 8vw, 44px); line-height: 1.05; }
 .rutas-cab .sub { font-size: 15px; }
+.banderita { width: 22px; height: 15px; border-radius: 2px; flex: none; box-shadow: 0 0 0 1px rgba(255,255,255,.3); }
+.filtro-pais .pill { display: inline-flex; align-items: center; gap: 7px; }
+.dias-t { width: 100%; color: var(--muted); font-size: 14px; }
+.filtro-pais { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.filtro-t { color: var(--muted); font-size: 14px; margin-right: 2px; }
 .tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; align-items: start; }
 .tarjeta { display: grid; background: var(--card); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; }
 .tarjeta.toca { border-color: var(--bandera); box-shadow: 0 0 0 1px var(--bandera); }
@@ -456,6 +460,7 @@ span.insignia { cursor: default; }
       <div><h1 id="rutas-t">Mi Ruta</h1><p class="sub" id="rutas-hoy"></p></div>
     </header>
     <h2 class="punto">Mis rutas</h2>
+    <div class="filtro-pais" id="filtro-pais" role="group" aria-label="Filtrar por país"></div>
     <div class="tarjetas" id="tarjetas"></div>
     <p class="nota creditos">Autor: Juan Felipe Olivar Londoño · Cada viaje es una ruta: la app os propone la que toca según la fecha.</p>
   </div>
@@ -465,13 +470,13 @@ span.insignia { cursor: default; }
   <div class="portada-caja">
     <div class="portada-ilu" id="portada-ilu"></div>
     <img class="portada-logo" src="logo.png" width="112" height="112" alt="Logo de Mi Ruta">
-    <p class="fecha">Sábado 21 de noviembre · Toulouse</p>
+    <p class="fecha" id="portada-fecha">Sábado 21 de noviembre · Toulouse</p>
     <h1 id="portada-t">Conquista Toulouse</h1>
     <p class="sub" id="portada-sub">Vuestro itinerario de hoy convertido en juego. Elegid la ruta completa o la exprés. Concierto a las 20:00.</p>
     <ul class="como">
       <li><span class="yo-demo"><svg class="yo-bandera" viewBox="0 0 26 34" aria-hidden="true"><path class="mastil" d="M9 31V5"/><circle class="pomo" cx="9" cy="4" r="2.4"/><path class="tela" d="M10.5 6.5L24 11.5 10.5 16.5z"/></svg><span class="yo-punto"></span></span>El punto azul que se mueve sois vosotros llevando la bandera. Al entrar en el círculo de cada parada se pone OK.</li>
       <li><span class="mk n2 ruta"><svg class="i" aria-hidden="true"><use href="#i-camara"/></svg></span>En cada una, un reto rápido: una foto divertida o probar algo.</li>
-      <li><span class="mk n3 ruta">3</span>Los círculos grandes son las prioridades del PDF.</li>
+      <li><span class="mk n3 ruta">3</span><span>Los círculos grandes son las prioridades <span id="portada-pdf">del PDF</span>.</span></li>
       <li><span class="mk n2 ok"><svg class="i" aria-hidden="true"><use href="#i-bandera"/></svg></span>Al hacer el reto, plantáis vuestra bandera y coronáis el nivel.</li>
     </ul>
     <div id="portada-modos"></div>
@@ -491,7 +496,7 @@ span.insignia { cursor: default; }
 <script>
 /* ====== RUTA DE MAÑANA · Toulouse en pareja (solo lo del PDF) ======
    nivel: 3 imprescindible (prioridad del PDF) · 2 recomendado · 1 si da tiempo */
-var RUTA = {
+var TOULOUSE = {
   id: 'toulouse-pareja',
   titulo: 'Toulouse en pareja',
   juego: 'Conquista Toulouse',
@@ -563,12 +568,22 @@ var RANGOS = [[0, 'Turistas'], [150, 'Paseantes'], [300, 'Exploradores'], [450, 
    Cada viaje es una tarjeta. lista: true = ya se puede jugar; false = próximamente.
    Para añadir un viaje: copia una tarjeta, cambia fechas y textos. */
 var CATALOGO = [
-  { id: 'toulouse-pareja', lista: true, nombre: 'Conquista Toulouse', lugares: ['Toulouse'], desde: '2026-11-21', hasta: '2026-11-21', fechas: 'Sábado 21 de noviembre de 2026', ilu: 'portada',
+  { id: 'zaragoza', lista: true, pais: ['España'], nombre: 'Conquista Zaragoza', lugares: ['Zaragoza'], desde: '', hasta: '', fechas: 'Cuando queráis · un día a pie', ilu: 'za-portada',
+    texto: 'Un día a pie por Zaragoza: el Pilar y el Ebro, la Seo, el tapeo de El Tubo y la Aljafería. Por la noche, el Pilar iluminado.' },
+  { id: 'toulouse-pareja', lista: true, pais: ['Francia'], nombre: 'Conquista Toulouse', lugares: ['Toulouse'], desde: '2026-11-21', hasta: '2026-11-21', fechas: 'Sábado 21 de noviembre de 2026', ilu: 'portada',
     texto: 'Un día a pie por el centro histórico: Saint-Sernin, el Capitole, los Jacobins y el Garona. Concierto a las 20:00.' },
-  { id: 'valladolid-leon', lista: false, nombre: 'Valladolid y León', lugares: ['Valladolid', 'León'], desde: '2026-12-05', hasta: '2026-12-09', fechas: 'Del 5 al 9 de diciembre de 2026', ilu: 'leon',
-    texto: 'Cinco días por Castilla y León: el centro de Valladolid y la León de la catedral, las tapas y el barrio Húmedo.' },
-  { id: 'milan-alpes', lista: false, nombre: 'Milán, Lugano, Como y Bernina Express', lugares: ['Milán', 'Lugano', 'Como', 'Bernina Express', 'Navigli'], desde: '2026-12-27', hasta: '2026-12-31', fechas: 'Del 27 al 31 de diciembre de 2026', ilu: 'alpes',
-    texto: 'Milán, Lugano y el lago de Como, el tren Bernina Express entre montañas nevadas y despedida del año en los Navigli: aperol, tardeo y Nochevieja.' }
+  { id: 'valladolid', lista: true, pais: ['España'], nombre: 'Conquista Valladolid', lugares: ['Valladolid'], desde: '', hasta: '', fechas: 'Cuando queráis · ruta corta', ilu: 'va-portada',
+    texto: 'Una mañana y un rato de tarde: la Plaza Mayor, San Pablo, la catedral, pinchos premiados y los pavos reales del Campo Grande.' },
+  { id: 'leon', lista: true, pais: ['España'], nombre: 'Conquista León', lugares: ['León'], desde: '', hasta: '', fechas: 'Cuando queráis · ruta corta', ilu: 'le-portada',
+    texto: 'La catedral de las vidrieras, Casa Botines de Gaudí, San Isidoro, tapeo en el Barrio Húmedo y San Marcos junto al río.' },
+  { id: 'lugano', lista: true, pais: ['Suiza'], nombre: 'Conquista Lugano', lugares: ['Lugano'], desde: '2026-12-28', hasta: '2026-12-28', fechas: 'Lunes 28 de diciembre de 2026 · por la mañana', ilu: 'n28-ciani',
+    texto: 'Lugano en Navidad: el Ayuntamiento y su gran árbol, los mercadillos, el lago, la puerta del Parco Ciani y el funicular del Monte Brè.' },
+  { id: 'como', lista: true, pais: ['Italia'], nombre: 'Conquista Como', lugares: ['Como'], desde: '2026-12-28', hasta: '2026-12-28', fechas: 'Lunes 28 de diciembre de 2026 · por la tarde', ilu: 'n28-balocchi',
+    texto: 'Una tarde corta en Como: el Duomo, la Città dei Balocchi con sus luces de Navidad y el lago iluminado.' },
+  { id: 'bernina', lista: true, pais: ['Suiza'], nombre: 'Tren Bernina', lugares: ['St. Moritz', 'Bernina Express', 'Tirano'], desde: '2026-12-29', hasta: '2026-12-29', fechas: 'Martes 29 de diciembre de 2026', ilu: 'nav-portada',
+    texto: 'St. Moritz y su lago helado, y el Bernina Express de los glaciares a las palmeras: Morteratsch, Montebello, Lago Bianco, Alp Grüm y Tirano.' },
+  { id: 'milan', lista: true, pais: ['Italia'], nombre: 'Conquista Milán', lugares: ['Milán', 'Navigli'], desde: '2026-12-30', hasta: '2026-12-30', fechas: 'Miércoles 30 de diciembre de 2026', ilu: 'n30-navigli',
+    texto: 'El Duomo, la Galleria, la Scala y el Camparino, comida milanesa y Aperol al atardecer en los Navigli. ¡Nos vemos en 2027!' }
 ];
 
 /* ====== ILUSTRACIONES (SVG propias, estilo videojuego plano) ====== */
@@ -715,6 +730,1009 @@ var ILU = (function () {
     hotel: marco(hotel(), C.noche), final: marco(concierto(), C.noche), portada: marco(portada()), leon: marco(leon()), extra: marco(extra()), alpes: marco(alpes())
   };
 })();
+/* ====== ILUSTRACIONES DE ZARAGOZA (mismo estilo que Toulouse) ====== */
+(function () {
+  var C = { cielo: '#13263a', noche: '#0b1722', suelo: '#0f1e2d', lad: '#c99a4e', lad2: '#a87a35', lad3: '#8C6D24', oro: '#D6AD55', tq: '#1DA0AB', tq2: '#14808A', bl: '#e8eef4', gr: '#9fb0c0', rojo: '#c0392b', verde: '#2f8a5b', choco: '#4a2a17' };
+  var marco = function (dentro, fondo) {
+    return '<svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="320" height="180" fill="' + (fondo || C.cielo) + '"/>' +
+      '<g fill="' + C.oro + '" opacity=".7"><circle cx="34" cy="24" r="1.4"/><circle cx="92" cy="14" r="1"/><circle cx="268" cy="20" r="1.4"/><circle cx="296" cy="44" r="1"/><circle cx="180" cy="10" r="1"/></g>' + dentro + '</svg>';
+  };
+  var arcos = function (x, y, n, w, h, sep, color) {
+    var s = '';
+    for (var i = 0; i < n; i++) s += '<rect x="' + (x + i * sep) + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + (w / 2) + '" fill="' + (color || C.noche) + '"/>';
+    return s;
+  };
+  var ondas = function (y) { return '<path d="M0 ' + y + 'h320M0 ' + (y + 16) + 'h320" stroke="' + C.tq + '" stroke-width="2" stroke-dasharray="18 14" opacity=".6"/>'; };
+  /* cúpula del Pilar con tejas de colores en zigzag */
+  var cupula = function (x, y, r, linterna) {
+    var id = 'zz' + x + '' + y;
+    return '<defs><pattern id="' + id + '" width="10" height="8" patternUnits="userSpaceOnUse"><rect width="10" height="8" fill="' + C.verde + '"/><path d="M0 6l5-4 5 4" fill="none" stroke="' + C.oro + '" stroke-width="2"/><path d="M0 8l5-4 5 4" fill="none" stroke="' + C.bl + '" stroke-width="1"/></pattern></defs>' +
+      '<path d="M' + (x - r) + ' ' + y + 'a' + r + ' ' + (r * 1.05) + ' 0 0 1 ' + (2 * r) + ' 0z" fill="url(#' + id + ')"/><rect x="' + (x - r - 2) + '" y="' + y + '" width="' + (2 * r + 4) + '" height="6" fill="' + C.lad3 + '"/>' +
+      (linterna ? '<rect x="' + (x - 4) + '" y="' + (y - r * 1.05 - 10) + '" width="8" height="11" fill="' + C.bl + '"/><path d="M' + (x - 5) + ' ' + (y - r * 1.05 - 10) + 'l5-6 5 6z" fill="' + C.oro + '"/>' : '');
+  };
+  /* torre del Pilar: cuerpo, dos pisos y chapitel */
+  var torre = function (x, y, w, h) {
+    return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + C.lad + '"/>' +
+      '<rect x="' + (x + 3) + '" y="' + (y - 22) + '" width="' + (w - 6) + '" height="22" fill="' + C.lad2 + '"/>' + arcos(x + 6, y - 18, 1, w - 12, 14, 0, C.noche) +
+      '<rect x="' + (x + 6) + '" y="' + (y - 36) + '" width="' + (w - 12) + '" height="14" fill="' + C.lad + '"/>' +
+      '<path d="M' + (x + 5) + ' ' + (y - 36) + 'q' + (w / 2 - 5) + ' -14 ' + (w - 10) + ' 0z" fill="' + C.verde + '"/><rect x="' + (x + w / 2 - 1) + '" y="' + (y - 52) + '" width="2" height="10" fill="' + C.oro + '"/>' +
+      arcos(x + 5, y + 10, 2, 5, 12, w - 15, C.noche);
+  };
+  var pilarSilueta = function (dy, noche) {
+    var cuerpo = noche ? C.lad2 : C.lad;
+    return '<rect x="56" y="' + (96 + dy) + '" width="208" height="' + (44) + '" fill="' + cuerpo + '"/>' +
+      cupula(100, 96 + dy, 16, true) + cupula(220, 96 + dy, 16, true) + cupula(132, 96 + dy, 11, false) + cupula(188, 96 + dy, 11, false) + cupula(160, 96 + dy, 26, true) +
+      torre(40, 70 + dy, 22, 70) + torre(258, 70 + dy, 22, 70) +
+      arcos(76, 112 + dy, 8, 8, 18, 22, noche ? C.oro : C.noche);
+  };
+  var pilar = function () {
+    return pilarSilueta(0) + '<rect y="140" width="320" height="10" fill="' + C.lad3 + '"/><rect y="150" width="320" height="30" fill="' + C.tq2 + '"/>' + ondas(160);
+  };
+  var puente = function () {
+    var b = '', xs = [[6, 40], [56, 44], [110, 48], [168, 48], [226, 44], [280, 36]];
+    xs.forEach(function (a) { b += '<path d="M' + a[0] + ' 150v-8a' + (a[1] / 2) + ' ' + (a[1] / 2.2) + ' 0 0 1 ' + a[1] + ' 0v8z" fill="' + C.tq2 + '"/>'; });
+    var leon = function (x) { return '<rect x="' + (x - 4) + '" y="94" width="8" height="18" fill="' + C.lad2 + '"/><path d="M' + (x - 7) + ' 94h14v-6c0-6-4-8-7-8s-7 2-7 8z" fill="' + C.oro + '"/><circle cx="' + (x + 4) + '" cy="82" r="4" fill="' + C.oro + '"/>'; };
+    return '<g opacity=".55">' + pilarSilueta(-40) + '</g><circle cx="280" cy="36" r="16" fill="' + C.oro + '"/>' +
+      '<rect y="128" width="320" height="52" fill="' + C.tq2 + '"/>' + ondas(160) +
+      '<rect x="0" y="110" width="320" height="34" fill="' + C.lad + '"/><rect x="0" y="106" width="320" height="6" fill="' + C.lad2 + '"/>' + b + leon(26) + leon(294);
+  };
+  var seo = function () {
+    var red = '', i, j;
+    for (j = 0; j < 4; j++) for (i = 0; i < 9; i++) red += '<path d="M' + (28 + i * 20) + ' ' + (62 + j * 22) + 'l10-10 10 10-10 10z" fill="none" stroke="' + C.lad3 + '" stroke-width="2.5"/>' +
+      '<circle cx="' + (38 + i * 20) + '" cy="' + (62 + j * 22) + '" r="2.6" fill="' + ((i + j) % 2 ? C.verde : C.bl) + '"/>';
+    return '<rect x="20" y="44" width="196" height="116" fill="' + C.lad2 + '"/><rect x="20" y="40" width="196" height="6" fill="' + C.lad3 + '"/>' + red +
+      '<rect x="20" y="146" width="196" height="14" fill="' + C.lad3 + '"/>' +
+      '<rect x="236" y="70" width="50" height="90" fill="' + C.lad + '"/><rect x="240" y="44" width="42" height="28" fill="' + C.lad2 + '"/><rect x="246" y="22" width="30" height="24" fill="' + C.lad + '"/>' +
+      '<path d="M246 22q15-22 30 0z" fill="' + C.lad3 + '"/><rect x="260" y="2" width="2" height="12" fill="' + C.oro + '"/><circle cx="261" cy="96" r="9" fill="' + C.bl + '"/><path d="M261 90v6l4 3" stroke="' + C.noche + '" stroke-width="2" fill="none"/>' +
+      arcos(252, 50, 2, 7, 16, 12, C.noche) + arcos(254, 28, 2, 5, 12, 10, C.noche) + '<rect x="250" y="126" width="22" height="34" rx="11" fill="' + C.noche + '"/>' +
+      '<rect y="160" width="320" height="20" fill="' + C.suelo + '"/>';
+  };
+  var mercado = function () {
+    var v = '';
+    for (var i = 0; i < 5; i++) v += '<path d="M' + (44 + i * 50) + ' 112V78a18 18 0 0 1 36 0v34z" fill="' + C.tq2 + '" opacity=".85"/><path d="M' + (62 + i * 50) + ' 60v52M' + (44 + i * 50) + ' 86h36" stroke="' + C.lad + '" stroke-width="2"/>';
+    return '<path d="M30 56q130-44 260 0z" fill="' + C.gr + '"/><path d="M34 56q126-38 252 0" fill="none" stroke="' + C.bl + '" stroke-width="2" opacity=".6"/>' +
+      '<rect x="30" y="56" width="260" height="64" fill="' + C.lad + '"/>' + v +
+      '<rect x="30" y="38" width="20" height="82" fill="' + C.lad2 + '"/><rect x="270" y="38" width="20" height="82" fill="' + C.lad2 + '"/><circle cx="40" cy="36" r="6" fill="' + C.oro + '"/><circle cx="280" cy="36" r="6" fill="' + C.oro + '"/>' +
+      '<rect x="20" y="126" width="280" height="32" fill="' + C.lad3 + '"/><rect x="20" y="120" width="280" height="6" fill="' + C.oro + '"/>' +
+      '<g fill="' + C.rojo + '"><circle cx="48" cy="114" r="7"/><circle cx="62" cy="116" r="6"/><circle cx="76" cy="114" r="7"/></g>' +
+      '<g fill="' + C.oro + '"><circle cx="118" cy="114" r="7"/><circle cx="132" cy="116" r="6"/></g>' +
+      '<path d="M176 120c0-14 30-16 34 0z" fill="' + C.rojo + '" opacity=".85"/><g stroke="' + C.lad2 + '" stroke-width="5" stroke-linecap="round"><path d="M240 100v18M254 98v20M268 100v18"/></g>' +
+      '<rect y="158" width="320" height="22" fill="' + C.suelo + '"/>';
+  };
+  var tapas = function () {
+    var tapa = function (x, top) { return '<rect x="' + (x - 22) + '" y="104" width="44" height="12" rx="4" fill="' + C.lad + '"/>' + top + '<rect x="' + (x - 1) + '" y="78" width="2" height="30" fill="' + C.bl + '"/>'; };
+    return '<rect x="0" y="0" width="320" height="64" fill="' + C.lad2 + '" opacity=".35"/>' +
+      '<rect x="22" y="12" width="76" height="22" rx="3" fill="' + C.noche + '"/><text x="60" y="27" text-anchor="middle" font-family="Roboto,sans-serif" font-size="12" font-weight="500" fill="' + C.oro + '" letter-spacing="2">EL TUBO</text>' +
+      '<g stroke="' + C.gr + '" stroke-width="2" fill="none"><path d="M200 46h90M200 34h90M210 34v12M230 34v12M250 34v12M270 34v12"/></g><rect x="236" y="14" width="6" height="18" fill="' + C.rojo + '"/><path d="M242 14h16v10h-16z" fill="' + C.oro + '"/>' +
+      '<rect y="118" width="320" height="62" fill="' + C.lad3 + '"/><rect y="114" width="320" height="6" fill="' + C.lad2 + '"/>' +
+      tapa(70, '<g fill="' + C.lad2 + '"><ellipse cx="62" cy="98" rx="9" ry="6"/><ellipse cx="78" cy="98" rx="9" ry="6"/></g>') +
+      tapa(140, '<g fill="' + C.bl + '"><ellipse cx="140" cy="88" rx="13" ry="6"/><ellipse cx="140" cy="98" rx="13" ry="6"/></g><rect x="127" y="91" width="26" height="4" fill="' + C.lad2 + '"/>') +
+      tapa(210, '<path d="M190 98q20-12 40 0q-20 8-40 0z" fill="' + C.gr + '"/><circle cx="222" cy="92" r="4" fill="' + C.verde + '"/>') +
+      '<path d="M262 74h22l-3 36h-16z" fill="' + C.bl + '" opacity=".85"/><path d="M264 84h18l-2 24h-14z" fill="' + C.rojo + '"/><circle cx="278" cy="82" r="3" fill="' + C.verde + '"/>';
+  };
+  var espana = function () {
+    return '<rect x="0" y="52" width="110" height="98" fill="' + C.lad2 + '"/><rect x="210" y="52" width="110" height="98" fill="' + C.lad + '"/>' +
+      arcos(10, 66, 4, 12, 20, 26, C.noche) + arcos(220, 66, 4, 12, 20, 26, C.noche) + arcos(6, 108, 4, 18, 42, 26, C.noche) + arcos(216, 108, 4, 18, 42, 26, C.noche) +
+      '<rect x="146" y="112" width="28" height="30" fill="' + C.lad3 + '"/><rect x="152" y="46" width="16" height="66" fill="' + C.gr + '"/><rect x="148" y="44" width="24" height="6" fill="' + C.lad3 + '"/>' +
+      '<path d="M160 22l6 10v12h-12V32z" fill="' + C.oro + '"/><circle cx="160" cy="18" r="4" fill="' + C.oro + '"/><path d="M152 28l-12-8 4 12zM168 28l12-8-4 12z" fill="' + C.oro + '"/>' +
+      '<rect y="150" width="320" height="30" fill="' + C.suelo + '"/><path d="M0 162h320" stroke="' + C.gr + '" stroke-width="2"/>' +
+      '<g transform="translate(24 132)"><rect width="128" height="26" rx="6" fill="' + C.bl + '"/><rect y="18" width="128" height="4" fill="' + C.tq + '"/>' +
+      '<g fill="' + C.noche + '"><rect x="8" y="5" width="20" height="10" rx="2"/><rect x="34" y="5" width="20" height="10" rx="2"/><rect x="60" y="5" width="20" height="10" rx="2"/><rect x="86" y="5" width="20" height="10" rx="2"/></g>' +
+      '<path d="M50 0l14-10M78 0L64-10" stroke="' + C.gr + '" stroke-width="2"/></g><path d="M0 120h320" stroke="' + C.gr + '" stroke-width="1" opacity=".5"/>';
+  };
+  var aljaferia = function () {
+    var lob = function (x, y, w, h) { /* arco polilobulado */
+      var r = w / 6, p = 'M' + x + ' ' + (y + h) + 'V' + (y + r * 2.4);
+      p += 'a' + r + ' ' + r + ' 0 0 1 ' + r * 1.2 + ' -' + r * 1.1 + 'a' + r + ' ' + r + ' 0 0 1 ' + r * 1.8 + ' -' + r * 1.3 + 'a' + r + ' ' + r + ' 0 0 1 ' + r * 1.8 + ' ' + r * 1.3 + 'a' + r + ' ' + r + ' 0 0 1 ' + r * 1.2 + ' ' + r * 1.1;
+      return '<path d="' + p + 'V' + (y + h) + 'z" fill="' + C.noche + '"/>';
+    };
+    var torreon = function (x) { return '<rect x="' + (x - 14) + '" y="40" width="28" height="80" fill="' + C.lad2 + '"/><path d="M' + (x - 14) + ' 40v-6h6v6h4v-6h6v6h4v-6h6v6z" fill="' + C.lad2 + '"/>'; };
+    return '<rect x="20" y="52" width="280" height="68" fill="' + C.lad3 + '"/>' + torreon(36) + torreon(124) + torreon(196) + torreon(284) +
+      '<rect x="52" y="18" width="40" height="102" fill="' + C.lad2 + '"/><path d="M52 18v-8h8v8h8v-8h8v8h8v-8h8v8z" fill="' + C.lad2 + '"/>' + arcos(64, 34, 2, 6, 14, 12, C.noche) +
+      '<rect x="0" y="96" width="320" height="64" fill="' + C.lad + '"/>' + lob(14, 110, 48, 50) + lob(76, 110, 48, 50) + lob(138, 104, 48, 56) + lob(200, 110, 48, 50) + lob(262, 110, 48, 50) +
+      '<g fill="none" stroke="' + C.oro + '" stroke-width="2.5"><path d="M38 108q31-26 62 0M100 108q31-30 62-6M158 102q31-24 62 6M220 108q31-26 62 0"/></g>' +
+      '<rect y="160" width="320" height="20" fill="' + C.suelo + '"/><rect x="156" y="150" width="12" height="10" fill="' + C.tq + '"/>';
+  };
+  var dulces = function () {
+    var fruta = function (x, y, c) { return '<path d="M' + (x - 9) + ' ' + y + 'l-6-5v10zM' + (x + 9) + ' ' + y + 'l6-5v10z" fill="' + c + '"/><rect x="' + (x - 10) + '" y="' + (y - 6) + '" width="20" height="12" rx="4" fill="' + c + '"/>'; };
+    return '<rect y="120" width="320" height="60" fill="' + C.lad3 + '"/><rect y="116" width="320" height="6" fill="' + C.lad2 + '"/>' +
+      '<path d="M40 84h56v26a18 18 0 0 1-18 18H58a18 18 0 0 1-18-18z" fill="' + C.bl + '"/><path d="M96 92h7a9 9 0 0 1 0 18h-7" fill="none" stroke="' + C.bl + '" stroke-width="5"/>' +
+      '<ellipse cx="68" cy="86" rx="26" ry="5" fill="' + C.choco + '"/><g fill="none" stroke="' + C.bl + '" stroke-width="2" opacity=".6" stroke-linecap="round"><path d="M60 70c-5-7 5-10 0-18"/><path d="M76 68c-5-7 5-10 0-18"/></g>' +
+      '<rect x="134" y="70" width="78" height="48" rx="4" fill="' + C.rojo + '"/><rect x="134" y="84" width="78" height="20" fill="' + C.oro + '"/><text x="173" y="98" text-anchor="middle" font-family="Roboto,sans-serif" font-size="10" font-weight="500" fill="' + C.noche + '" letter-spacing="1">ADOQUÍN</text>' +
+      fruta(242, 110, C.tq) + fruta(276, 108, C.oro) + fruta(258, 92, C.rojo) + fruta(290, 90, C.verde) + fruta(232, 90, '#a98bdb');
+  };
+  var hotel = function () {
+    var v = '', x, y;
+    for (y = 54; y < 150; y += 24) for (x = 96; x < 224; x += 22) v += '<rect x="' + x + '" y="' + y + '" width="12" height="14" fill="' + ((x + y) % 3 ? C.oro : C.noche) + '" opacity="' + ((x + y) % 3 ? '.9' : '1') + '"/>';
+    return '<rect width="320" height="180" fill="' + C.noche + '"/><circle cx="264" cy="40" r="16" fill="' + C.bl + '"/><circle cx="271" cy="35" r="14" fill="' + C.noche + '"/>' +
+      '<rect x="84" y="40" width="152" height="124" fill="' + C.lad2 + '"/><rect x="80" y="34" width="160" height="8" fill="' + C.lad3 + '"/>' + v +
+      '<rect x="146" y="140" width="28" height="24" fill="' + C.tq2 + '"/><text x="160" y="30" text-anchor="middle" font-family="Roboto,sans-serif" font-size="12" fill="' + C.oro + '" letter-spacing="3">HOTEL</text>' +
+      '<rect y="164" width="320" height="16" fill="' + C.suelo + '"/>';
+  };
+  var nochePilar = function () {
+    return '<circle cx="302" cy="30" r="14" fill="' + C.bl + '"/><circle cx="308" cy="25" r="14" fill="' + C.noche + '"/>' +
+      '<g fill="' + C.oro + '" opacity=".14"><path d="M160 0l70 140H90z"/></g>' + pilarSilueta(-6, true) +
+      '<rect y="134" width="320" height="8" fill="' + C.lad3 + '"/><rect y="142" width="320" height="38" fill="#0e2f3a"/>' +
+      '<g opacity=".35" transform="translate(0 284) scale(1 -1)">' + cupula(160, 142, 26, false) + '</g>' +
+      '<path d="M40 156h50M120 166h80M230 158h50" stroke="' + C.oro + '" stroke-width="2" opacity=".5" stroke-linecap="round"/>';
+  };
+  var portada = function () {
+    return '<circle cx="300" cy="30" r="16" fill="' + C.oro + '"/>' + pilarSilueta(-14) +
+      '<rect y="132" width="320" height="48" fill="' + C.tq2 + '"/><rect x="0" y="122" width="320" height="14" fill="' + C.lad + '"/>' + arcos(8, 128, 10, 22, 14, 32, C.tq2) + ondas(156);
+  };
+  ILU['za-desayuno'] = marco('<rect y="120" width="320" height="60" fill="' + C.lad3 + '"/><rect y="116" width="320" height="6" fill="' + C.lad2 + '"/>' +
+    '<circle cx="262" cy="46" r="20" fill="' + C.oro + '"/><g stroke="' + C.oro + '" stroke-width="3" stroke-linecap="round"><path d="M262 14v-8M290 46h8M282 26l6-6M242 26l-6-6"/></g>' +
+    '<path d="M70 84h60v26a20 20 0 0 1-20 20H90a20 20 0 0 1-20-20z" fill="' + C.bl + '"/><path d="M130 92h8a10 10 0 0 1 0 20h-8" fill="none" stroke="' + C.bl + '" stroke-width="5"/>' +
+    '<ellipse cx="100" cy="86" rx="28" ry="5" fill="' + C.choco + '"/><g fill="none" stroke="' + C.bl + '" stroke-width="2" opacity=".6" stroke-linecap="round"><path d="M90 70c-5-7 5-10 0-18"/><path d="M106 68c-5-7 5-10 0-18"/></g>' +
+    '<ellipse cx="216" cy="118" rx="54" ry="7" fill="' + C.bl + '" opacity=".8"/><g stroke="' + C.lad + '" stroke-width="10" stroke-linecap="round" fill="none"><path d="M176 108q30-30 70-18"/><path d="M186 114q34-22 70-10"/></g>' +
+    '<g stroke="' + C.lad3 + '" stroke-width="1.5" fill="none" opacity=".8"><path d="M182 104q30-26 62-16"/><path d="M192 110q32-18 62-8"/></g>');
+  ILU['za-pilar'] = marco(pilar());
+  ILU['za-puente'] = marco(puente());
+  ILU['za-seo'] = marco(seo());
+  ILU['za-mercado'] = marco(mercado());
+  ILU['za-comida'] = marco(tapas());
+  ILU['za-espana'] = marco(espana());
+  ILU['za-aljaferia'] = marco(aljaferia());
+  ILU['za-cafe'] = marco(dulces());
+  ILU['za-hotel'] = marco(hotel(), C.noche);
+  ILU['za-final'] = marco(nochePilar(), C.noche);
+  ILU['za-portada'] = marco(portada());
+})();
+
+/* ====== RUTA POR ZARAGOZA · un día a pie por el centro ======
+   Sin fecha fija: se juega el día que elijáis, con la hora real.
+   nivel: 3 imprescindible · 2 recomendado · 1 si da tiempo */
+var ZARAGOZA = {
+  id: 'zaragoza',
+  titulo: 'Zaragoza en pareja',
+  juego: 'Conquista Zaragoza',
+  ciudad: 'Zaragoza',
+  pais: 'España',
+  fecha: null,
+  fechaTexto: 'Cuando queráis',
+  inicio: '11:00',
+  fin: '18:15',
+  finExpres: '15:30',
+  nota: 'Por la noche, el Pilar iluminado',
+  idea: 'Un día a pie por el centro: el Pilar y el Ebro, la Seo, el tapeo de El Tubo y la Aljafería.',
+  centro: [41.6545, -0.8830],
+  epilogo: { hora: '20:00', titulo: 'El Pilar iluminado', ilu: 'za-final', ahora: '¡A ver el Pilar iluminado!', texto: 'Terminad el día en la orilla del Ebro, con el Pilar iluminado. ¡Zaragoza conquistada!' },
+  rangos: [[0, 'Turistas'], [150, 'Paseantes'], [300, 'Exploradores'], [450, 'Maños de adopción'], [600, 'Leyendas del Pilar']],
+  consejos: [
+    'Llevad calzado cómodo: todo el recorrido se hace andando.',
+    'En invierno la Aljafería cierra a mediodía (de 14:00 a 16:00) y el domingo por la tarde: por eso va a las 16:00. Mirad el horario el mismo día.',
+    'Si sopla el cierzo, llevad algo que abrigue en el cuello: en el Puente de Piedra se nota.',
+    'Si vais justos de tiempo, priorizad el Pilar, el Puente de Piedra, la Seo y la Aljafería (los círculos grandes).'
+  ],
+  paradas: [
+    { id: 'za-desayuno', hora: '10:00', nombre: 'Chocolate con churros', tipo: 'comida', nivel: 2, dur: '45 min',
+      texto: 'Empezad el día como en Zaragoza: chocolate espeso con churros, cerca de la plaza del Pilar.' },
+    { id: 'za-pilar', hora: '11:00', nombre: 'Basílica del Pilar', tipo: 'monumento', nivel: 3, lat: 41.65655, lng: -0.87865, dur: '45 min',
+      texto: 'El gran símbolo de la ciudad, junto al Ebro. Fijaos en sus cúpulas de tejas de colores y, dentro, en los frescos de Goya.' },
+    { id: 'za-puente', hora: '11:45', nombre: 'Puente de Piedra y el Ebro', tipo: 'paseo', nivel: 3, lat: 41.65800, lng: -0.87610, dur: '30 min',
+      texto: 'Cruzad el puente de los leones: desde la otra orilla está la mejor foto del Pilar reflejado en el río.' },
+    { id: 'za-seo', hora: '12:15', nombre: 'La Seo', tipo: 'monumento', nivel: 3, lat: 41.65455, lng: -0.87580, dur: '35 min',
+      texto: 'La catedral, al otro lado de la plaza. Buscad por detrás el muro mudéjar de ladrillo y azulejos verdes y blancos.' },
+    { id: 'za-mercado', hora: '12:50', nombre: 'Mercado Central', tipo: 'comida', nivel: 2, lat: 41.65390, lng: -0.88200, dur: '40 min',
+      texto: 'Un mercado modernista de hierro y cristal. Producto aragonés: longaniza, ternasco, borraja, quesos y frutas de Aragón.' },
+    { id: 'za-comida', hora: '13:30', nombre: 'Tapeo en El Tubo', tipo: 'comida', nivel: 2, eleccion: true, dur: '1 h 30 min',
+      texto: 'El laberinto de calles estrechas del tapeo. Cada bar tiene su especialidad: elegid por dónde empezar y dejaos llevar.' },
+    { id: 'za-espana', hora: '15:15', nombre: 'Plaza de España y paseo Independencia', tipo: 'paseo', nivel: 2, lat: 41.65110, lng: -0.87980, dur: '30 min',
+      texto: 'El centro de la ciudad, con el tranvía pasando. Bajad un poco por el paseo de soportales antes de ir a la Aljafería.' },
+    { id: 'za-aljaferia', hora: '16:00', nombre: 'Palacio de la Aljafería', tipo: 'monumento', nivel: 3, lat: 41.65640, lng: -0.89690, dur: '1 h 15 min',
+      texto: 'Un palacio musulmán del siglo XI con arcos entrecruzados que parecen de encaje. Hoy es la sede de las Cortes de Aragón.' },
+    { id: 'za-cafe', hora: '17:30', nombre: 'Café, dulces y paseo final', tipo: 'comida', nivel: 1, lat: 41.65320, lng: -0.87700, dur: '45 min',
+      texto: 'Un café y los dulces de la ciudad: las frutas de Aragón (cada papel esconde un sabor) y el adoquín del Pilar, un caramelo enorme.' },
+    { id: 'za-hotel', hora: '18:15', nombre: 'Regreso al hotel', tipo: 'hotel', nivel: 1, dur: '',
+      texto: 'Descansad un rato y salid otra vez por la noche a ver el Pilar iluminado junto al Ebro.' }
+  ],
+  comidas: [
+    { id: 'almau', nombre: 'Bodegas Almau', zona: 'Calle Estébanes', lat: 41.65280, lng: -0.87860,
+      texto: 'Bodega con mucha historia en El Tubo. Lo suyo: las anchoas con olivas.', porque: 'Si queréis lo más clásico.' },
+    { id: 'donacasta', nombre: 'Doña Casta', zona: 'Calle Estébanes', lat: 41.65290, lng: -0.87840,
+      texto: 'Taberna de croquetas: de muchos sabores y muy famosas.', porque: 'Para picar algo rico y sin complicaciones.' },
+    { id: 'pascualillo', nombre: 'Casa Pascualillo', zona: 'Calle Libertad', lat: 41.65260, lng: -0.87900,
+      texto: 'Bar de tapas de toda la vida, de los más antiguos de El Tubo.', porque: 'Si os apetece barra y ambiente de siempre.' }
+  ]
+};
+Object.assign(JUEGO, {
+  'za-desayuno': { insignia: 'Churreros', expres: '10:00', reto: 'Foto mojando el primer churro en el chocolate.' },
+  'za-pilar': { insignia: 'Pilarica', expres: '12:15', reto: 'Foto juntos con las cúpulas de colores detrás.' },
+  'za-puente': { insignia: 'Ebro', expres: '12:55', reto: 'Foto desde el puente con el Pilar al fondo.' },
+  'za-seo': { insignia: 'Mudéjar', expres: '13:20', reto: 'Foto de los dibujos de ladrillo y azulejo del muro mudéjar.' },
+  'za-mercado': { insignia: 'Mercado', reto: 'Probad algo aragonés que no hayáis comido nunca.' },
+  'za-comida': { insignia: 'Tapeo', expres: '14:00', reto: 'Brindis y foto de la mejor tapa del día.' },
+  'za-espana': { insignia: 'Tranvía', reto: 'Foto saltando juntos con el tranvía detrás.' },
+  'za-aljaferia': { insignia: 'Aljafería', expres: '10:45', reto: 'Foto bajo los arcos entrecruzados del patio.' },
+  'za-cafe': { insignia: 'Frutas de Aragón', reto: 'Abrid una fruta de Aragón cada uno: ¿a quién le toca el mejor sabor?' },
+  'za-hotel': { insignia: 'Listos', expres: '15:30', reto: 'Foto arreglados para salir por la noche.' }
+});
+TOULOUSE.pais = 'Francia';
+TOULOUSE.finExpres = '15:30';
+var RUTAS = { 'toulouse-pareja': TOULOUSE, zaragoza: ZARAGOZA };
+/* ====== ILUSTRACIONES DE VALLADOLID Y LEÓN (mismo estilo que Toulouse) ====== */
+(function () {
+  var C = { cielo: '#13263a', noche: '#0b1722', suelo: '#0f1e2d', lad: '#c99a4e', lad2: '#a87a35', lad3: '#8C6D24', oro: '#D6AD55', tq: '#1DA0AB', tq2: '#14808A', bl: '#e8eef4', gr: '#9fb0c0', rojo: '#b5523b', rojo2: '#93402d', vino: '#7a1f3d', verde: '#2f8a5b', azul: '#3b6fd1', vi: '#a98bdb', yema: '#FEBF04', choco: '#4a2a17', piedra: '#d8cfb8', piedra2: '#b9ae93' };
+  var marco = function (dentro, fondo) {
+    return '<svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="320" height="180" fill="' + (fondo || C.cielo) + '"/>' +
+      '<g fill="' + C.oro + '" opacity=".7"><circle cx="34" cy="24" r="1.4"/><circle cx="92" cy="14" r="1"/><circle cx="268" cy="20" r="1.4"/><circle cx="296" cy="44" r="1"/><circle cx="180" cy="10" r="1"/></g>' + dentro + '</svg>';
+  };
+  var rect = function (x, y, w, h, c, rx) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '"' + (rx ? ' rx="' + rx + '"' : '') + ' fill="' + c + '"/>'; };
+  var arcos = function (x, y, n, w, h, sep, color) {
+    var s = '';
+    for (var i = 0; i < n; i++) s += rect(x + i * sep, y, w, h, color || C.noche, w / 2);
+    return s;
+  };
+  var suelo = function (y) { return rect(0, y, 320, 180 - y, C.suelo); };
+  var mesa = function () { return rect(0, 120, 320, 60, C.lad3) + rect(0, 116, 320, 6, C.lad2); };
+  var sol = function (x, y, r) { return '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + C.oro + '"/>'; };
+  var luna = function (x, y) { return '<circle cx="' + x + '" cy="' + y + '" r="14" fill="' + C.bl + '"/><circle cx="' + (x + 6) + '" cy="' + (y - 5) + '" r="12" fill="' + C.noche + '"/>'; };
+  var taza = function (x, y, liquido) {
+    return '<path d="M' + x + ' ' + y + 'h56v26a18 18 0 0 1-18 18H' + (x + 18) + 'a18 18 0 0 1-18-18z" fill="' + C.bl + '"/><path d="M' + (x + 56) + ' ' + (y + 8) + 'h7a9 9 0 0 1 0 18h-7" fill="none" stroke="' + C.bl + '" stroke-width="5"/>' +
+      '<ellipse cx="' + (x + 28) + '" cy="' + (y + 2) + '" rx="26" ry="5" fill="' + liquido + '"/><g fill="none" stroke="' + C.bl + '" stroke-width="2" opacity=".6" stroke-linecap="round"><path d="M' + (x + 20) + ' ' + (y - 14) + 'c-5-7 5-10 0-18"/><path d="M' + (x + 36) + ' ' + (y - 16) + 'c-5-7 5-10 0-18"/></g>';
+  };
+  var copa = function (x, y, c) {
+    return '<path d="M' + (x - 11) + ' ' + (y - 44) + 'h22l-3 20a8 8 0 0 1-16 0z" fill="' + C.bl + '" opacity=".85"/><path d="M' + (x - 9) + ' ' + (y - 34) + 'h18l-2 10a7 7 0 0 1-14 0z" fill="' + c + '"/>' +
+      rect(x - 1, y - 18, 2, 16, C.bl) + rect(x - 8, y - 3, 16, 3, C.bl, 1.5);
+  };
+  var chapitel = function (x, y, w, c) { return '<path d="M' + x + ' ' + y + 'l' + (w / 2) + '-' + (w * 0.9) + ' ' + (w / 2) + ' ' + (w * 0.9) + 'z" fill="' + (c || C.lad3) + '"/>'; };
+  var roseton = function (x, y, r, colores) {
+    var s = '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + C.noche + '"/>', n = 12;
+    for (var k = 0; k < n; k++) {
+      var a = k * 2 * Math.PI / n, b = (k + 1) * 2 * Math.PI / n, rr = r * 0.88;
+      s += '<path d="M' + x + ' ' + y + 'L' + (x + rr * Math.cos(a)).toFixed(1) + ' ' + (y + rr * Math.sin(a)).toFixed(1) + 'A' + rr + ' ' + rr + ' 0 0 1 ' + (x + rr * Math.cos(b)).toFixed(1) + ' ' + (y + rr * Math.sin(b)).toFixed(1) + 'z" fill="' + colores[k % colores.length] + '"/>';
+    }
+    return s + '<circle cx="' + x + '" cy="' + y + '" r="' + (r * 0.88) + '" fill="none" stroke="' + C.oro + '" stroke-width="1.5"/><circle cx="' + x + '" cy="' + y + '" r="' + (r * 0.25) + '" fill="' + C.oro + '"/>';
+  };
+  var VIDRIO = [C.azul, C.rojo, C.yema, C.tq, C.vi];
+  var cartel = function (x, y, t) {
+    var w = t.length * 7.5 + 16;
+    return rect(x - w / 2, y - 15, w, 22, C.noche, 3) + '<text x="' + x + '" y="' + y + '" text-anchor="middle" font-family="Roboto,sans-serif" font-size="12" font-weight="500" fill="' + C.oro + '" letter-spacing="2">' + t + '</text>';
+  };
+  var hotel = function () {
+    var v = '', x, y;
+    for (y = 54; y < 150; y += 24) for (x = 96; x < 224; x += 22) v += rect(x, y, 12, 14, (x + y) % 3 ? C.oro : C.noche);
+    return luna(264, 40) + rect(84, 40, 152, 124, C.lad2) + rect(80, 34, 160, 8, C.lad3) + v + rect(146, 140, 28, 24, C.tq2) +
+      '<text x="160" y="30" text-anchor="middle" font-family="Roboto,sans-serif" font-size="12" fill="' + C.oro + '" letter-spacing="3">HOTEL</text>' + suelo(164);
+  };
+
+  /* ---------- VALLADOLID ---------- */
+  var plazaMayor = function (noche) {
+    var v = '', k;
+    for (k = 0; k < 9; k++) v += arcos(22 + k * 32, 116, 1, 18, 28, 0, C.noche) + rect(25 + k * 32, 80, 12, 16, noche ? C.yema : C.noche, 2) + rect(23 + k * 32, 96, 16, 3, C.bl);
+    return rect(10, 60, 300, 84, C.rojo) + rect(10, 54, 300, 8, C.rojo2) + rect(10, 108, 300, 4, C.rojo2) + v +
+      rect(126, 22, 68, 40, C.piedra) + rect(150, 6, 20, 18, C.piedra) + chapitel(148, 8, 24, C.gr) +
+      '<circle cx="160" cy="40" r="10" fill="' + C.bl + '"/><path d="M160 34v6l4 3" stroke="' + C.noche + '" stroke-width="2" fill="none"/>' + arcos(134, 30, 1, 8, 16, 0, C.noche) + arcos(178, 30, 1, 8, 16, 0, C.noche) +
+      suelo(144) + '<path d="M0 160h320" stroke="#27405a"/>' +
+      rect(144, 126, 32, 22, C.gr) + '<path d="M153 126v-26h14v26z" fill="' + C.lad3 + '"/><circle cx="160" cy="94" r="7" fill="' + C.lad3 + '"/><path d="M166 104l10-14" stroke="' + C.lad3 + '" stroke-width="3"/>';
+  };
+  var sanPablo = function () {
+    var red = '', i, j;
+    for (j = 0; j < 5; j++) for (i = 0; i < 6; i++) red += rect(102 + i * 20, 46 + j * 16, 14, 10, C.lad3, 2);
+    return rect(90, 34, 140, 118, C.piedra) + red + '<path d="M90 34l70-20 70 20z" fill="' + C.piedra2 + '"/>' +
+      '<circle cx="160" cy="24" r="5" fill="' + C.oro + '"/>' +
+      rect(54, 56, 38, 96, C.piedra2) + chapitel(52, 58, 42, C.lad3) + arcos(64, 72, 2, 7, 18, 12, C.noche) +
+      rect(228, 56, 38, 96, C.piedra2) + chapitel(226, 58, 42, C.lad3) + arcos(238, 72, 2, 7, 18, 12, C.noche) +
+      '<path d="M136 152v-30a24 24 0 0 1 48 0v30z" fill="' + C.noche + '"/><path d="M130 122a30 30 0 0 1 60 0" fill="none" stroke="' + C.oro + '" stroke-width="3"/>' + suelo(152);
+  };
+  var catedralVa = function () {
+    return rect(110, 52, 160, 100, C.piedra2) + rect(110, 46, 160, 8, C.lad3) + rect(170, 22, 46, 30, C.piedra2) + '<path d="M166 24l27-14 27 14z" fill="' + C.lad3 + '"/>' +
+      arcos(126, 86, 5, 14, 34, 28, C.noche) + '<path d="M176 152v-30a17 17 0 0 1 34 0v30z" fill="' + C.noche + '"/>' +
+      rect(232, 30, 38, 122, C.piedra) + '<path d="M228 32l23-22 23 22z" fill="' + C.gr + '"/>' + '<circle cx="251" cy="52" r="7" fill="' + C.noche + '"/>' +
+      rect(42, 60, 40, 92, C.lad) + rect(48, 30, 28, 32, C.lad) + chapitel(44, 32, 36, C.rojo2) +
+      arcos(52, 40, 2, 7, 14, 13, C.noche) + arcos(50, 70, 3, 6, 14, 10, C.noche) + arcos(50, 98, 3, 6, 14, 10, C.noche) + suelo(152);
+  };
+  var pinchos = function () {
+    var p = function (x, top) { return rect(x - 22, 98, 44, 14, C.lad, 4) + top + rect(x - 1, 70, 2, 32, C.bl) + '<circle cx="' + x + '" cy="70" r="3" fill="' + C.oro + '"/>'; };
+    return rect(0, 0, 320, 60, C.lad2) + '<g opacity=".5">' + rect(0, 0, 320, 60, C.noche) + '</g>' + cartel(80, 36, 'PINCHOS') +
+      '<g fill="' + C.lad2 + '">' + [200, 220, 240, 260, 280].map(function (x) { return rect(x - 5, 16, 10, 30, C.vino, 4); }).join('') + '</g>' +
+      mesa() + p(60, '<circle cx="60" cy="88" r="12" fill="' + C.rojo + '"/>') + p(130, '<path d="M108 98q22-28 44 0z" fill="' + C.yema + '"/>') +
+      p(200, '<ellipse cx="200" cy="90" rx="20" ry="8" fill="' + C.choco + '"/><circle cx="210" cy="86" r="3" fill="' + C.verde + '"/>') + copa(270, 118, C.vino);
+  };
+  var campoGrande = function () {
+    var pluma = '', k;
+    for (k = 0; k < 7; k++) {
+      var a = Math.PI + k * Math.PI / 6, x = 200 + 62 * Math.cos(a), y = 130 + 62 * Math.sin(a);
+      pluma += '<path d="M200 130L' + x.toFixed(1) + ' ' + y.toFixed(1) + '" stroke="' + C.tq2 + '" stroke-width="16" stroke-linecap="round"/><circle cx="' + (200 + 54 * Math.cos(a)).toFixed(1) + '" cy="' + (130 + 54 * Math.sin(a)).toFixed(1) + '" r="5" fill="' + C.oro + '"/><circle cx="' + (200 + 54 * Math.cos(a)).toFixed(1) + '" cy="' + (130 + 54 * Math.sin(a)).toFixed(1) + '" r="2.4" fill="' + C.azul + '"/>';
+    }
+    var arbol = function (x, r) { return rect(x - 3, 118, 6, 30, C.lad3) + '<circle cx="' + x + '" cy="' + (118 - r * 0.6) + '" r="' + r + '" fill="' + C.verde + '"/>'; };
+    return arbol(40, 26) + arbol(96, 18) + arbol(290, 22) + rect(0, 140, 320, 40, '#1f4d3a') + '<ellipse cx="70" cy="160" rx="56" ry="10" fill="' + C.tq2 + '"/>' + pluma +
+      '<ellipse cx="200" cy="128" rx="12" ry="16" fill="' + C.azul + '"/><path d="M196 116c-2-14 2-22 8-24l2 6c-4 4-4 10-4 18z" fill="' + C.azul + '"/><circle cx="203" cy="90" r="2" fill="' + C.oro + '"/>' +
+      '<path d="M196 144v10M204 144v10" stroke="' + C.oro + '" stroke-width="2"/>';
+  };
+  var desayunoVa = function () {
+    return mesa() + sol(262, 46, 20) + taza(56, 84, C.lad) + '<ellipse cx="210" cy="118" rx="58" ry="7" fill="' + C.bl + '" opacity=".8"/>' +
+      rect(166, 96, 88, 22, C.lad, 8) + rect(172, 92, 76, 8, C.yema, 4) + '<g fill="' + C.verde + '"><circle cx="188" cy="94" r="2"/><circle cx="214" cy="93" r="2"/><circle cx="236" cy="95" r="2"/></g>';
+  };
+
+  /* ---------- LEÓN ---------- */
+  var catedralLe = function (noche) {
+    var v = '', k;
+    for (k = 0; k < 6; k++) v += rect(127 + k * 11, 104, 6, 26, VIDRIO[k % 5], 3);
+    return (noche ? '<path d="M70 180L130 50h60l60 130z" fill="' + C.yema + '" opacity=".1"/>' : '') +
+      rect(110, 70, 100, 76, noche ? C.lad2 : C.piedra) + '<path d="M106 72l54-28 54 28z" fill="' + (noche ? C.lad3 : C.piedra2) + '"/>' +
+      rect(76, 36, 36, 110, noche ? C.lad3 : C.piedra2) + chapitel(74, 38, 40, noche ? C.lad2 : C.gr) + aguja(94, 4) +
+      rect(208, 36, 36, 110, noche ? C.lad3 : C.piedra2) + chapitel(206, 38, 40, noche ? C.lad2 : C.gr) + aguja(226, 4) +
+      roseton(160, 86, 15, noche ? VIDRIO : [C.noche, C.tq2, C.noche, C.azul]) + v +
+      arcos(84, 60, 2, 8, 22, 12, noche ? C.yema : C.noche) + arcos(216, 60, 2, 8, 22, 12, noche ? C.yema : C.noche) +
+      '<path d="M148 146v-14a12 12 0 0 1 24 0v14z" fill="' + (noche ? C.yema : C.noche) + '"/>' + suelo(146);
+  };
+  var aguja = function (x, y) { return rect(x - 1, y, 2, 10, C.oro); };
+  var botines = function () {
+    var torre = function (x) { return rect(x - 13, 50, 26, 98, C.gr) + '<path d="M' + (x - 15) + ' 52l15-34 15 34z" fill="' + C.noche + '"/>' + arcos(x - 4, 66, 1, 8, 14, 0, C.noche) + arcos(x - 4, 100, 1, 8, 14, 0, C.noche); };
+    var v = '', i, j;
+    for (j = 0; j < 3; j++) for (i = 0; i < 6; i++) v += rect(98 + i * 22, 74 + j * 22, 10, 14, C.noche, 2);
+    return rect(84, 60, 152, 88, '#b8c2cc') + '<path d="M80 62h160l-12-18H92z" fill="' + C.noche + '"/>' + v + torre(84) + torre(236) +
+      '<path d="M148 148v-22a12 12 0 0 1 24 0v22z" fill="' + C.noche + '"/><path d="M150 50h20l-10-14z" fill="' + C.oro + '"/>' + suelo(148) +
+      '<g transform="translate(282 148)">' + rect(-26, -14, 52, 6, C.lad3) + rect(-24, -8, 4, 8, C.lad3) + rect(20, -8, 4, 8, C.lad3) +
+      '<circle cx="-6" cy="-34" r="7" fill="' + C.lad3 + '"/><path d="M-12-27h12l3 13h-17z" fill="' + C.lad3 + '"/><path d="M0-22l12 4" stroke="' + C.lad3 + '" stroke-width="3"/></g>';
+  };
+  var sanIsidoro = function () {
+    return rect(30, 80, 190, 72, C.piedra2) + '<path d="M26 82h198l-14-16H40z" fill="' + C.lad3 + '"/>' + arcos(48, 104, 5, 18, 30, 32, C.noche) +
+      '<path d="M96 152v-28a20 20 0 0 1 40 0v28z" fill="' + C.noche + '"/><path d="M90 124a26 26 0 0 1 52 0" fill="none" stroke="' + C.oro + '" stroke-width="2.5"/>' +
+      rect(224, 28, 54, 124, C.piedra) + '<path d="M220 30l31-20 31 20z" fill="' + C.lad3 + '"/>' + arcos(236, 48, 2, 11, 24, 18, C.noche) + arcos(236, 92, 2, 11, 24, 18, C.noche) +
+      '<path d="M251 0v10M247 4h8" stroke="' + C.oro + '" stroke-width="2"/><path d="M243 10l8-6 8 6-8 4z" fill="' + C.oro + '"/>' + suelo(152);
+  };
+  var humedo = function () {
+    return rect(0, 0, 110, 116, C.lad2) + rect(210, 0, 110, 116, C.rojo) + arcos(14, 14, 3, 14, 20, 32, C.yema) + arcos(224, 14, 3, 14, 20, 32, C.yema) +
+      cartel(160, 40, 'BARRIO HÚMEDO') + mesa() +
+      copa(54, 116, C.vino) + copa(84, 116, C.vino) +
+      '<ellipse cx="160" cy="112" rx="34" ry="7" fill="' + C.bl + '"/><g fill="' + C.choco + '"><ellipse cx="148" cy="104" rx="12" ry="7"/><ellipse cx="172" cy="104" rx="12" ry="7"/></g><g fill="' + C.rojo + '" opacity=".6"><circle cx="148" cy="104" r="3"/><circle cx="172" cy="104" r="3"/></g>' +
+      '<ellipse cx="250" cy="112" rx="34" ry="7" fill="' + C.bl + '"/><g fill="' + C.lad + '"><ellipse cx="238" cy="104" rx="10" ry="7"/><ellipse cx="258" cy="104" rx="10" ry="7"/><ellipse cx="248" cy="96" rx="10" ry="7"/></g>';
+  };
+  var sanMarcos = function () {
+    var concha = function (x, y) { return '<path d="M' + (x - 9) + ' ' + y + 'a9 9 0 0 1 18 0l-9 7z" fill="' + C.oro + '"/>'; };
+    var v = '', k;
+    for (k = 0; k < 11; k++) v += rect(24 + k * 26, 82, 10, 18, C.noche, 5) + rect(24 + k * 26, 110, 10, 18, C.noche, 5);
+    return rect(8, 66, 304, 70, C.piedra) + rect(8, 60, 304, 8, C.piedra2) + v + rect(130, 32, 60, 34, C.piedra) + '<path d="M126 34l34-20 34 20z" fill="' + C.piedra2 + '"/>' +
+      concha(40, 72) + concha(92, 72) + concha(160, 48) + concha(228, 72) + concha(280, 72) +
+      rect(0, 136, 320, 44, C.tq2) + '<path d="M0 154h320M0 170h320" stroke="' + C.tq + '" stroke-width="2" stroke-dasharray="18 14" opacity=".6"/>';
+  };
+  var desayunoLe = function () {
+    var mantecada = function (x) { return '<path d="M' + x + ' 116l5-20h30l5 20z" fill="' + C.bl + '"/><path d="M' + (x + 3) + ' 98c0-14 8-18 17-18s17 4 17 18z" fill="' + C.lad + '"/>'; };
+    return mesa() + sol(262, 46, 20) + taza(50, 84, C.lad) + mantecada(170) + mantecada(214);
+  };
+
+  ILU['va-desayuno'] = marco(desayunoVa());
+  ILU['va-plaza'] = marco(plazaMayor(false));
+  ILU['va-sanpablo'] = marco(sanPablo());
+  ILU['va-catedral'] = marco(catedralVa());
+  ILU['va-comida'] = marco(pinchos());
+  ILU['va-campo'] = marco(campoGrande());
+  ILU['va-hotel'] = marco(hotel(), C.noche);
+  ILU['va-final'] = marco(luna(286, 30) + plazaMayor(true) + copa(40, 176, C.vino) + copa(280, 176, C.vino), C.noche);
+  ILU['va-portada'] = marco(sol(276, 34, 16) + plazaMayor(false));
+  ILU['le-desayuno'] = marco(desayunoLe());
+  ILU['le-catedral'] = marco(catedralLe(false));
+  ILU['le-botines'] = marco(botines());
+  ILU['le-sanisidoro'] = marco(sanIsidoro());
+  ILU['le-comida'] = marco(humedo(), C.noche);
+  ILU['le-sanmarcos'] = marco(sanMarcos());
+  ILU['le-hotel'] = marco(hotel(), C.noche);
+  ILU['le-final'] = marco(luna(286, 30) + catedralLe(true), C.noche);
+  ILU['le-portada'] = marco(sol(286, 30, 16) + catedralLe(false));
+})();
+
+/* ====== RUTAS CORTAS POR VALLADOLID Y POR LEÓN ======
+   Sin fecha fija: se juegan el día que elijáis, con la hora real.
+   nivel: 3 imprescindible · 2 recomendado · 1 si da tiempo */
+var VALLADOLID = {
+  id: 'valladolid',
+  titulo: 'Valladolid en pareja',
+  juego: 'Conquista Valladolid',
+  ciudad: 'Valladolid',
+  pais: 'España',
+  fecha: null,
+  fechaTexto: 'Cuando queráis',
+  inicio: '10:45',
+  fin: '15:45',
+  finExpres: '14:00',
+  nota: 'Por la noche, vinos por la Plaza Mayor',
+  centro: [41.6530, -4.7270],
+  epilogo: { hora: '20:00', titulo: 'Vinos por la Plaza Mayor', ilu: 'va-final', ahora: '¡Hora de los vinos!', texto: 'Terminad el día con un vino de la tierra por la Plaza Mayor iluminada. ¡Valladolid conquistada!' },
+  rangos: [[0, 'Turistas'], [120, 'Paseantes'], [240, 'Exploradores'], [360, 'Pucelanos de adopción'], [480, 'Leyendas del Pisuerga']],
+  consejos: [
+    'Es una ruta corta: todo se hace andando y en unas cinco horas.',
+    'Los museos y las iglesias cambian de horario según el día: miradlo el mismo día.',
+    'Si vais justos de tiempo, priorizad la Plaza Mayor y San Pablo (los círculos grandes).'
+  ],
+  paradas: [
+    { id: 'va-desayuno', hora: '10:00', nombre: 'Café y tostada', tipo: 'comida', nivel: 2, dur: '40 min',
+      texto: 'Empezad tranquilos con un café y una tostada en una cafetería cerca de la Plaza Mayor.' },
+    { id: 'va-plaza', hora: '10:45', nombre: 'Plaza Mayor', tipo: 'monumento', nivel: 3, lat: 41.65195, lng: -4.72850, dur: '25 min',
+      texto: 'La gran plaza roja de soportales, con el Ayuntamiento y la estatua del conde Ansúrez, el fundador de la ciudad.' },
+    { id: 'va-sanpablo', hora: '11:15', nombre: 'San Pablo y San Gregorio', tipo: 'monumento', nivel: 3, lat: 41.65830, lng: -4.72270, dur: '40 min',
+      texto: 'Dos fachadas de piedra labrada como si fueran encaje, una al lado de la otra. En San Gregorio está el Museo Nacional de Escultura.' },
+    { id: 'va-catedral', hora: '12:05', nombre: 'Catedral y la Antigua', tipo: 'monumento', nivel: 2, lat: 41.65370, lng: -4.72330, dur: '35 min',
+      texto: 'La catedral que se quedó sin terminar y, al lado, Santa María la Antigua con su torre románica de tejado rojo.' },
+    { id: 'va-comida', hora: '13:00', nombre: 'Pinchos por el centro', tipo: 'comida', nivel: 2, eleccion: true, dur: '1 h 30 min',
+      texto: 'Valladolid es tierra de pinchos premiados. Elegid por dónde empezar y probad la especialidad de cada barra.' },
+    { id: 'va-campo', hora: '14:45', nombre: 'Campo Grande', tipo: 'paseo', nivel: 2, lat: 41.64780, lng: -4.73090, dur: '40 min',
+      texto: 'El gran parque de la ciudad, con estanque, ardillas y pavos reales sueltos. A ver si alguno abre la cola.' },
+    { id: 'va-hotel', hora: '15:45', nombre: 'Regreso al hotel', tipo: 'hotel', nivel: 1, dur: '',
+      texto: 'Descansad un rato y por la noche volved a la Plaza Mayor a tomar un vino.' }
+  ],
+  comidas: [
+    { id: 'zagales', nombre: 'Los Zagales', zona: 'Calle Pasión', lat: 41.65160, lng: -4.72750,
+      texto: 'Pinchos de autor premiados, muy originales y divertidos de ver.', porque: 'Si queréis sorpresas en cada bocado.' },
+    { id: 'paramesa', nombre: 'Villa Paramesa', zona: 'Plaza Martí y Monsó', lat: 41.65350, lng: -4.72920,
+      texto: 'Tapas creativas de mucha calidad. Suele estar lleno.', porque: 'Para algo más elaborado.' },
+    { id: 'jero', nombre: 'Jero', zona: 'Calle Correos', lat: 41.65270, lng: -4.72700,
+      texto: 'Una barra enorme llena de pinchos: se pide señalando.', porque: 'Si os apetece mucha variedad.' }
+  ]
+};
+var LEON = {
+  id: 'leon',
+  titulo: 'León en pareja',
+  juego: 'Conquista León',
+  ciudad: 'León',
+  pais: 'España',
+  fecha: null,
+  fechaTexto: 'Cuando queráis',
+  inicio: '10:45',
+  fin: '16:00',
+  finExpres: '14:15',
+  nota: 'Por la noche, vinos en el Barrio Húmedo',
+  centro: [42.5995, -5.5730],
+  epilogo: { hora: '20:00', titulo: 'Vinos en el Húmedo', ilu: 'le-final', ahora: '¡Hora de los vinos!', texto: 'Por la noche, la catedral iluminada y unos vinos por el Barrio Húmedo, cada uno con su tapa. ¡León conquistado!' },
+  rangos: [[0, 'Turistas'], [120, 'Paseantes'], [240, 'Exploradores'], [360, 'Leoneses de adopción'], [480, 'Leyendas de las vidrieras']],
+  consejos: [
+    'Es una ruta corta: todo se hace andando y en unas cinco horas.',
+    'La catedral y San Isidoro cierran a mediodía algunos días: mirad el horario el mismo día.',
+    'En el Barrio Húmedo, con cada consumición suele venir una tapa.',
+    'Si vais justos de tiempo, priorizad la Catedral y San Isidoro (los círculos grandes).'
+  ],
+  paradas: [
+    { id: 'le-desayuno', hora: '10:00', nombre: 'Café y mantecadas', tipo: 'comida', nivel: 2, dur: '40 min',
+      texto: 'Un café con mantecadas de Astorga, el dulce típico de la provincia, cerca de la catedral.' },
+    { id: 'le-catedral', hora: '10:45', nombre: 'Catedral de León', tipo: 'monumento', nivel: 3, lat: 42.59940, lng: -5.56680, dur: '1 h',
+      texto: 'La catedral de las vidrieras: dentro, la luz entra de todos los colores. Mirad el gran rosetón.' },
+    { id: 'le-botines', hora: '11:50', nombre: 'Casa Botines', tipo: 'monumento', nivel: 2, lat: 42.59830, lng: -5.57060, dur: '25 min',
+      texto: 'Un edificio de Gaudí que parece un castillo. En el banco de la puerta está Gaudí sentado, en bronce.' },
+    { id: 'le-sanisidoro', hora: '12:20', nombre: 'San Isidoro', tipo: 'monumento', nivel: 3, lat: 42.60070, lng: -5.57110, dur: '50 min',
+      texto: 'Iglesia románica con el Panteón de los Reyes, cuyas bóvedas pintadas llaman la «Capilla Sixtina del románico».' },
+    { id: 'le-comida', hora: '13:30', nombre: 'Tapeo en el Barrio Húmedo', tipo: 'comida', nivel: 2, eleccion: true, dur: '1 h 15 min',
+      texto: 'Calles llenas de bares alrededor de la plaza de San Martín. Elegid por dónde empezar.' },
+    { id: 'le-sanmarcos', hora: '15:00', nombre: 'San Marcos y el río', tipo: 'paseo', nivel: 2, lat: 42.60330, lng: -5.58260, dur: '35 min',
+      texto: 'Una fachada larguísima llena de conchas de peregrino, junto al río Bernesga. Hoy es un Parador.' },
+    { id: 'le-hotel', hora: '16:00', nombre: 'Regreso al hotel', tipo: 'hotel', nivel: 1, dur: '',
+      texto: 'Descansad un rato y por la noche volved al Húmedo a ver la catedral iluminada.' }
+  ],
+  comidas: [
+    { id: 'rebote', nombre: 'El Rebote', zona: 'Plaza de San Martín', lat: 42.59660, lng: -5.56880,
+      texto: 'Un clásico del Húmedo, famoso por sus croquetas.', porque: 'Si queréis lo más típico.' },
+    { id: 'bicha', nombre: 'La Bicha', zona: 'Plaza de San Martín', lat: 42.59650, lng: -5.56900,
+      texto: 'Taberna de siempre, conocida por su tapa de morcilla.', porque: 'Para probar la morcilla de León.' },
+    { id: 'flechazo', nombre: 'El Flechazo', zona: 'Barrio Húmedo', lat: 42.59630, lng: -5.56840,
+      texto: 'Otra parada muy popular del tapeo leonés.', porque: 'Si os apetece seguir de bar en bar.' }
+  ]
+};
+Object.assign(JUEGO, {
+  'va-desayuno': { insignia: 'Buenos días', expres: '10:00', reto: 'Foto brindando con los cafés.' },
+  'va-plaza': { insignia: 'Plaza Mayor', expres: '10:45', reto: 'Foto con el conde Ansúrez detrás.' },
+  'va-sanpablo': { insignia: 'Piedra de encaje', expres: '11:15', reto: 'Buscad el animal más raro tallado en las fachadas y haced foto.' },
+  'va-catedral': { insignia: 'La Antigua', reto: 'Foto con la torre de tejado rojo de la Antigua.' },
+  'va-comida': { insignia: 'Pinchos', expres: '12:15', reto: 'Votad el mejor pincho y foto de él.' },
+  'va-campo': { insignia: 'Pavo real', reto: 'Foto con un pavo real (si abre la cola, puntos dobles).' },
+  'va-hotel': { insignia: 'Listos', expres: '14:00', reto: 'Foto arreglados para salir por la noche.' },
+  'le-desayuno': { insignia: 'Mantecadas', expres: '10:00', reto: 'Foto mojando la mantecada en el café.' },
+  'le-catedral': { insignia: 'Vidrieras', expres: '10:45', reto: 'Foto con la luz de colores de las vidrieras.' },
+  'le-botines': { insignia: 'Gaudí', reto: 'Foto sentados en el banco junto a Gaudí.' },
+  'le-sanisidoro': { insignia: 'Románico', expres: '11:50', reto: 'Foto juntos bajo los arcos de la entrada.' },
+  'le-comida': { insignia: 'Barrio Húmedo', expres: '12:45', reto: 'Foto de la mejor tapa que os pongan con el vino.' },
+  'le-sanmarcos': { insignia: 'Peregrinos', reto: 'Contad las conchas que veáis en la fachada y foto con una.' },
+  'le-hotel': { insignia: 'Listos', expres: '14:15', reto: 'Foto arreglados para salir por la noche.' }
+});
+RUTAS.valladolid = VALLADOLID;
+RUTAS.leon = LEON;
+/* ====== ILUSTRACIONES DE LA RUTA DE NAVIDAD: MILÁN Y SUIZA (mismo estilo que Toulouse) ====== */
+(function () {
+  var C = { cielo: '#13263a', noche: '#0b1722', suelo: '#0f1e2d', lad: '#c99a4e', lad2: '#a87a35', lad3: '#8C6D24', oro: '#D6AD55', tq: '#1DA0AB', tq2: '#14808A', bl: '#e8eef4', gr: '#9fb0c0', nieve: '#d5dde5', rojo: '#c0392b', rojo2: '#93302a', ladr: '#b5523b', verde: '#2f8a5b', verde2: '#24543f', azul: '#3b6fd1', yema: '#FEBF04', naranja: '#f07b2b', piedra: '#e9e2d2', lago: '#1a5f74', hielo: '#cfe3ef' };
+  var marco = function (dentro, fondo) {
+    return '<svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="320" height="180" fill="' + (fondo || C.cielo) + '"/>' +
+      '<g fill="' + C.oro + '" opacity=".7"><circle cx="34" cy="24" r="1.4"/><circle cx="92" cy="14" r="1"/><circle cx="268" cy="20" r="1.4"/><circle cx="296" cy="44" r="1"/><circle cx="180" cy="10" r="1"/></g>' + dentro + '</svg>';
+  };
+  var R = function (x, y, w, h, c, rx, extra) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '"' + (rx ? ' rx="' + rx + '"' : '') + ' fill="' + c + '"' + (extra || '') + '/>'; };
+  var arcos = function (x, y, n, w, h, sep, c) { var s = ''; for (var i = 0; i < n; i++) s += R(x + i * sep, y, w, h, c || C.noche, w / 2); return s; };
+  var ventanas = function (x, y, cols, filas, dx, dy, c, w, h) { var s = '', i, j; for (j = 0; j < filas; j++) for (i = 0; i < cols; i++) s += R(x + i * dx, y + j * dy, w, h, c, 1.5); return s; };
+  var suelo = function (y, c) { return R(0, y, 320, 180 - y, c || C.suelo); };
+  var mesa = function () { return R(0, 120, 320, 60, C.lad3) + R(0, 116, 320, 6, C.lad2); };
+  var sol = function (x, y, r, c) { return '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + (c || C.oro) + '"/>'; };
+  var luna = function (x, y) { return '<circle cx="' + x + '" cy="' + y + '" r="14" fill="' + C.bl + '"/><circle cx="' + (x + 6) + '" cy="' + (y - 5) + '" r="12" fill="' + C.noche + '"/>'; };
+  var ondas = function (y, c) { return '<path d="M0 ' + y + 'h320M0 ' + (y + 16) + 'h320" stroke="' + (c || C.tq) + '" stroke-width="2" stroke-dasharray="18 14" opacity=".55"/>'; };
+  var copos = function () { var s = ''; for (var i = 0; i < 22; i++) s += '<circle cx="' + ((i * 53) % 320) + '" cy="' + ((i * 31) % 120 + 6) + '" r="' + (1 + i % 2) + '" fill="' + C.bl + '" opacity=".7"/>'; return s; };
+  var montes = function (y, c, nieve) {
+    return '<path d="M0 ' + y + 'L46 ' + (y - 46) + 'l30 22 50-60 50 48 36-26 60 40 48-20v' + (180 - y + 40) + 'H0z" fill="' + c + '"/>' +
+      (nieve ? '<path d="M110 ' + (y - 84) + 'l16-20 18 18-10-2-9 7zM38 ' + (y - 38) + 'l8-8 8 6zM204 ' + (y - 44) + 'l8-6 10 8z" fill="' + C.bl + '"/>' : '');
+  };
+  var abeto = function (x, y, s, nieve) {
+    s = s || 1;
+    return R(x - 2 * s, y - 4 * s, 4 * s, 6 * s, C.lad3) + '<path d="M' + x + ' ' + (y - 40 * s) + 'l' + (13 * s) + ' ' + (22 * s) + 'h' + (-5 * s) + 'l' + (11 * s) + ' ' + (14 * s) + 'h' + (-38 * s) + 'l' + (11 * s) + ' ' + (-14 * s) + 'h' + (-5 * s) + 'z" fill="' + C.verde2 + '"/>' +
+      (nieve ? '<path d="M' + x + ' ' + (y - 40 * s) + 'l' + (6 * s) + ' ' + (10 * s) + 'h' + (-12 * s) + 'z" fill="' + C.bl + '"/>' : '');
+  };
+  var farola = function (x, y, h) { return R(x - 1.5, y - h, 3, h, C.gr) + '<circle cx="' + x + '" cy="' + (y - h - 4) + '" r="5" fill="' + C.yema + '"/><circle cx="' + x + '" cy="' + (y - h - 4) + '" r="12" fill="' + C.yema + '" opacity=".16"/>'; };
+  var guirnalda = function (x1, x2, y) {
+    var s = '<path d="M' + x1 + ' ' + y + 'Q' + ((x1 + x2) / 2) + ' ' + (y + 16) + ' ' + x2 + ' ' + y + '" stroke="' + C.gr + '" fill="none" opacity=".6"/>', n = 8, k;
+    for (k = 1; k < n; k++) { var t = k / n, x = x1 + (x2 - x1) * t, yy = y + 32 * t * (1 - t); s += '<circle cx="' + x.toFixed(1) + '" cy="' + (yy + 1).toFixed(1) + '" r="2.4" fill="' + [C.yema, C.rojo, C.tq][k % 3] + '"/>'; }
+    return s;
+  };
+  var arbolNavidad = function (x, y, h) {
+    var s = R(x - 4, y - 8, 8, 10, C.lad3) + '<path d="M' + x + ' ' + (y - h) + 'L' + (x + h * 0.38) + ' ' + (y - 6) + 'H' + (x - h * 0.38) + 'z" fill="' + C.verde + '"/>', k;
+    for (k = 0; k < 9; k++) s += '<circle cx="' + (x + ((k * 37) % 21 - 10) * h / 70).toFixed(1) + '" cy="' + (y - 14 - (k * 13) % (h - 26)).toFixed(1) + '" r="2.6" fill="' + [C.yema, C.rojo, C.bl][k % 3] + '"/>';
+    return s + '<path d="M' + x + ' ' + (y - h - 9) + 'l3 6 6 1-5 4 2 6-6-3-6 3 2-6-5-4 6-1z" fill="' + C.yema + '"/>';
+  };
+  var suiza = function (x, y) { return R(x, y - 30, 2, 30, C.gr) + R(x + 2, y - 30, 20, 20, C.rojo) + R(x + 10, y - 27, 4, 14, C.bl) + R(x + 5, y - 22, 14, 4, C.bl); };
+  var italia = function (x, y) { return R(x, y - 30, 2, 30, C.gr) + R(x + 2, y - 30, 8, 16, C.verde) + R(x + 10, y - 30, 8, 16, C.bl) + R(x + 18, y - 30, 8, 16, C.rojo); };
+  var taza = function (x, y, liq) {
+    return '<path d="M' + x + ' ' + y + 'h56v26a18 18 0 0 1-18 18H' + (x + 18) + 'a18 18 0 0 1-18-18z" fill="' + C.bl + '"/><path d="M' + (x + 56) + ' ' + (y + 8) + 'h7a9 9 0 0 1 0 18h-7" fill="none" stroke="' + C.bl + '" stroke-width="5"/>' +
+      '<ellipse cx="' + (x + 28) + '" cy="' + (y + 2) + '" rx="26" ry="5" fill="' + liq + '"/><g fill="none" stroke="' + C.bl + '" stroke-width="2" opacity=".6" stroke-linecap="round"><path d="M' + (x + 20) + ' ' + (y - 14) + 'c-5-7 5-10 0-18"/><path d="M' + (x + 36) + ' ' + (y - 16) + 'c-5-7 5-10 0-18"/></g>';
+  };
+  var copaAperol = function (x, y, s) {
+    s = s || 1;
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><path d="M-16-50h32l-4 34a12 12 0 0 1-24 0z" fill="' + C.bl + '" opacity=".85"/><path d="M-14-40h28l-3 24a11 11 0 0 1-22 0z" fill="' + C.naranja + '"/>' +
+      '<circle cx="10" cy="-44" r="7" fill="#f2a33a"/><circle cx="10" cy="-44" r="4" fill="' + C.yema + '"/><path d="M-6-56l8 26" stroke="' + C.bl + '" stroke-width="2"/>' + R(-1.5, -8, 3, 8, C.bl) + R(-10, 0, 20, 3, C.bl, 1.5) + '</g>';
+  };
+  /* el tren rojo del Bernina, con ventanas panorámicas */
+  var bernina = function (x, y, n, s) {
+    s = s || 1;
+    var t = '', k;
+    for (k = 0; k < n; k++) t += R(k * 62, 0, 58, 26, C.rojo, 5) + R(k * 62 + 5, 3, 48, 11, C.bl, 3, ' opacity=".9"') + R(k * 62, 20, 58, 3, C.rojo2);
+    t += '<path d="M' + (n * 62 - 4) + ' 0h10a14 26 0 0 1 14 26h-24z" fill="' + C.rojo + '"/>';
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')">' + t + '</g>';
+  };
+  var via = function (y) { return R(0, y, 320, 4, C.gr) + '<path d="M0 ' + (y + 7) + 'h320" stroke="' + C.lad3 + '" stroke-width="4" stroke-dasharray="4 8"/>'; };
+  var bus = function (x, y, noche) {
+    return '<g transform="translate(' + x + ' ' + y + ')">' + R(0, 0, 150, 52, C.bl, 8) + R(0, 32, 150, 6, C.tq) + ventanas(10, 8, 6, 1, 22, 0, noche ? C.yema : C.cielo, 18, 18) + R(130, 8, 14, 20, noche ? C.yema : C.cielo, 2) +
+      '<circle cx="32" cy="54" r="9" fill="' + C.noche + '"/><circle cx="118" cy="54" r="9" fill="' + C.noche + '"/><circle cx="32" cy="54" r="4" fill="' + C.gr + '"/><circle cx="118" cy="54" r="4" fill="' + C.gr + '"/>' +
+      (noche ? '<path d="M150 36l40 10v-20z" fill="' + C.yema + '" opacity=".25"/>' : '') + '</g>';
+  };
+
+  /* ---------- 28: LUGANO Y COMO ---------- */
+  var riforma = function () {
+    return R(50, 50, 220, 100, C.piedra) + R(50, 44, 220, 8, C.gr) + R(110, 30, 100, 16, C.piedra) + '<path d="M106 32l54-14 54 14z" fill="' + C.gr + '"/>' +
+      R(118, 92, 84, 58, '#d8cba9') + [124, 144, 164, 184].map(function (x) { return R(x, 96, 8, 54, C.bl); }).join('') +
+      ventanas(62, 62, 4, 2, 12, 40, C.noche, 7, 16) + ventanas(214, 62, 4, 2, 12, 40, C.noche, 7, 16) + ventanas(124, 64, 4, 1, 20, 0, C.noche, 8, 16) +
+      suiza(150, 30) + suelo(150) + arbolNavidad(160, 170, 70) + guirnalda(0, 90, 40) + guirnalda(230, 320, 40);
+  };
+  var chalet = function (x, y, c) {
+    return R(x, y, 56, 40, C.lad2) + '<path d="M' + (x - 6) + ' ' + y + 'l34-18 34 18z" fill="' + C.ladr + '"/><path d="M' + (x - 6) + ' ' + y + 'l34-18 34 18" fill="none" stroke="' + C.bl + '" stroke-width="3"/>' +
+      R(x + 6, y + 8, 44, 18, c, 2) + R(x + 4, y + 24, 48, 4, C.lad3);
+  };
+  var mercadillo = function () {
+    return copos() + suelo(140) + chalet(16, 92, C.yema) + chalet(92, 92, C.rojo) + chalet(168, 92, C.tq) + chalet(244, 92, C.yema) +
+      guirnalda(0, 160, 56) + guirnalda(160, 320, 56) +
+      '<g transform="translate(150 132)"><path d="M0 0h26v24a8 8 0 0 1-8 8h-10a8 8 0 0 1-8-8z" fill="' + C.rojo + '"/><path d="M26 6h5a6 6 0 0 1 0 12h-5" fill="none" stroke="' + C.rojo + '" stroke-width="3"/><g fill="none" stroke="' + C.bl + '" stroke-width="2" opacity=".6" stroke-linecap="round"><path d="M8-6c-4-5 4-8 0-14"/><path d="M18-6c-4-5 4-8 0-14"/></g></g>';
+  };
+  var salvatore = function () { return '<path d="M150 112l56-78 36 40 40-20 40 58z" fill="' + C.verde2 + '"/><path d="M196 48l10-14 10 12z" fill="' + C.bl + '" opacity=".7"/>'; };
+  var lagoLugano = function () {
+    return '<path d="M0 112l40-30 40 30z" fill="' + C.verde2 + '"/>' + salvatore() + R(0, 112, 320, 50, C.lago) + ondas(124) +
+      '<path d="M120 132h50l-8 8h-36z" fill="' + C.bl + '"/>' + R(136, 122, 18, 10, C.bl) + R(0, 160, 320, 20, C.suelo) + R(0, 156, 320, 4, C.gr) +
+      farola(30, 156, 34) + farola(110, 156, 34) + farola(200, 156, 34) + farola(290, 156, 34);
+  };
+  var ciani = function () {
+    var barras = '', k;
+    for (k = 0; k < 9; k++) barras += R(118 + k * 10, 48, 2, 96, C.noche) + '<path d="M' + (119 + k * 10) + ' 44l-3 6h6z" fill="' + C.oro + '"/>';
+    return montes(120, C.verde2, true) + R(0, 112, 320, 40, C.lago) + ondas(122) +
+      R(0, 144, 320, 36, C.lad) + '<path d="M0 152h320" stroke="' + C.lad3 + '" stroke-width="2"/>' +
+      R(94, 30, 22, 116, C.piedra) + R(204, 30, 22, 116, C.piedra) + '<circle cx="105" cy="26" r="9" fill="' + C.piedra + '"/><circle cx="215" cy="26" r="9" fill="' + C.piedra + '"/>' +
+      '<path d="M116 52q44-34 88 0" fill="none" stroke="' + C.noche + '" stroke-width="4"/>' + barras + R(116, 90, 88, 3, C.noche) + R(116, 140, 88, 3, C.noche) +
+      '<circle cx="160" cy="70" r="9" fill="none" stroke="' + C.noche + '" stroke-width="3"/>' + '<ellipse cx="60" cy="124" rx="40" ry="22" fill="' + C.verde + '"/><ellipse cx="266" cy="124" rx="44" ry="24" fill="' + C.verde + '"/>';
+  };
+  var funicularBre = function () {
+    return sol(60, 40, 16) + R(0, 140, 320, 40, C.lago) + ondas(152) + '<path d="M0 140L230 30l90 10v100z" fill="' + C.verde2 + '"/><path d="M20 140L230 36" stroke="' + C.gr + '" stroke-width="3"/>' +
+      '<g transform="rotate(-25 130 92)">' + R(96, 74, 70, 26, C.rojo, 4) + ventanas(102, 79, 4, 1, 16, 0, C.bl, 12, 10) + '</g>' +
+      R(236, 22, 30, 18, C.piedra) + '<path d="M232 24l19-12 19 12z" fill="' + C.ladr + '"/>' + abeto(290, 64) + abeto(200, 70, .7) + abeto(150, 100, .6);
+  };
+  var comidaLugano = function () {
+    return mesa() + '<ellipse cx="120" cy="114" rx="66" ry="14" fill="' + C.bl + '"/><ellipse cx="120" cy="110" rx="52" ry="9" fill="' + C.yema + '"/>' +
+      '<path d="M96 104q24-12 52 0" stroke="#7a3a1a" stroke-width="10" stroke-linecap="round" fill="none"/>' +
+      '<path d="M236 70h28l-3 24a11 11 0 0 1-22 0z" fill="' + C.bl + '" opacity=".85"/><path d="M238 80h24l-2 14a10 10 0 0 1-20 0z" fill="#7a1f3d"/>' + R(249, 104, 2, 12, C.bl) + R(242, 114, 16, 3, C.bl) + suiza(286, 112);
+  };
+  var duomoComo = function () {
+    return R(70, 70, 180, 80, C.piedra) + '<path d="M66 72l94-30 94 30z" fill="' + C.gr + '"/>' + R(150, 22, 20, 24, C.tq2) + '<path d="M128 46a32 30 0 0 1 64 0z" fill="' + C.tq + '"/>' + R(158, 10, 4, 12, C.oro) +
+      '<circle cx="160" cy="92" r="13" fill="' + C.noche + '"/><circle cx="160" cy="92" r="9" fill="none" stroke="' + C.oro + '" stroke-width="2"/>' + arcos(92, 108, 3, 12, 30, 20, C.noche) + arcos(188, 108, 3, 12, 30, 20, C.noche) +
+      '<path d="M148 150v-26a12 12 0 0 1 24 0v26z" fill="' + C.noche + '"/>' + [80, 110, 210, 240].map(function (x) { return '<path d="M' + (x - 3) + ' 72l3-14 3 14z" fill="' + C.bl + '"/>'; }).join('') + suelo(150) + italia(280, 150);
+  };
+  var balocchi = function () {
+    var radios = '', k;
+    for (k = 0; k < 8; k++) { var a = k * Math.PI / 4; radios += '<path d="M240 70L' + (240 + 46 * Math.cos(a)).toFixed(1) + ' ' + (70 + 46 * Math.sin(a)).toFixed(1) + '" stroke="' + C.gr + '" stroke-width="2"/><circle cx="' + (240 + 46 * Math.cos(a)).toFixed(1) + '" cy="' + (70 + 46 * Math.sin(a)).toFixed(1) + '" r="6" fill="' + [C.yema, C.rojo, C.tq][k % 3] + '"/>'; }
+    return '<circle cx="240" cy="70" r="46" fill="none" stroke="' + C.bl + '" stroke-width="3"/>' + radios + '<path d="M240 70l-20 74h40z" fill="none" stroke="' + C.gr + '" stroke-width="3"/>' +
+      suelo(144) + chalet(20, 104, C.yema) + chalet(96, 104, C.rojo) + guirnalda(0, 180, 60) + copos();
+  };
+  var lagoComo = function (noche) {
+    return (noche ? luna(270, 34) : sol(270, 40, 18)) + montes(110, noche ? '#1a2c3f' : C.verde2, !noche) + R(0, 104, 320, 56, noche ? '#0e2f3a' : C.lago) + ondas(118, noche ? C.yema : C.tq) +
+      R(196, 74, 60, 34, C.piedra) + '<path d="M196 76a30 22 0 0 1 60 0z" fill="' + C.gr + '"/>' + [202, 216, 230, 244].map(function (x) { return R(x, 82, 5, 26, C.bl); }).join('') +
+      R(0, 156, 320, 24, C.suelo) + R(0, 152, 320, 4, C.gr) + farola(30, 152, 34) + farola(100, 152, 34) + farola(170, 152, 34) +
+      '<path d="M60 132h50l-8 8h-36z" fill="' + C.bl + '"/>' + (noche ? '<g fill="' + C.yema + '" opacity=".5"><path d="M30 156v-30M100 156v-30M170 156v-30" stroke="' + C.yema + '"/></g>' : '');
+  };
+  var vueltaMilan = function () { return luna(270, 34) + '<g fill="#1a2c3f"><rect x="0" y="80" width="40" height="60"/><rect x="40" y="60" width="30" height="80"/><rect x="200" y="50" width="34" height="90"/><rect x="250" y="76" width="70" height="64"/></g>' + ventanas(46, 70, 2, 4, 12, 16, C.yema, 6, 8) + ventanas(206, 60, 2, 5, 14, 16, C.yema, 6, 8) + suelo(140) + bus(60, 104, true); };
+
+  /* ---------- 29: ST. MORITZ Y BERNINA EXPRESS ---------- */
+  var salidaBus = function () {
+    return sol(276, 108, 24, C.naranja) + '<g fill="#1a2c3f"><rect x="0" y="70" width="40" height="70"/><rect x="46" y="40" width="26" height="100"/><rect x="230" y="56" width="38" height="84"/></g>' +
+      R(90, 30, 40, 110, '#22384f') + ventanas(96, 38, 3, 6, 11, 16, C.yema, 6, 8) + suelo(140) + bus(120, 100, false) +
+      R(20, 112, 64, 20, C.noche, 3) + '<text x="52" y="126" text-anchor="middle" font-family="Roboto,sans-serif" font-size="10" fill="' + C.oro + '" letter-spacing="1">BERNINA</text>';
+  };
+  var stMoritz = function () {
+    return montes(110, C.nieve, false) + '<path d="M0 110L46 64l30 22 50-60 50 48 36-26 60 40 48-20v100H0z" fill="none"/>' +
+      [0, 1, 2, 3, 4].map(function (k) { var x = 24 + k * 50; return R(x, 88, 36, 30, [C.piedra, C.lad, C.bl, C.ladr, C.piedra][k]) + '<path d="M' + (x - 4) + ' 90l22-14 22 14z" fill="' + C.bl + '"/>' + ventanas(x + 5, 96, 3, 1, 10, 0, C.yema, 6, 8); }).join('') +
+      '<g transform="rotate(5 286 70)">' + R(278, 40, 16, 78, C.piedra) + '<path d="M276 40l10-14 10 14z" fill="' + C.gr + '"/>' + R(282, 50, 8, 10, C.noche, 3) + '</g>' +
+      R(0, 118, 320, 62, C.hielo) + '<path d="M40 140h60M140 154h70M240 142h50" stroke="' + C.bl + '" stroke-width="3" stroke-linecap="round"/>' + abeto(16, 120, .8, true) + suiza(296, 170) + copos();
+  };
+  var pasteleria = function () {
+    return mesa() + R(20, 20, 280, 70, C.lad2) + R(20, 20, 280, 70, C.noche, 0, ' opacity=".3"') +
+      R(52, 32, 216, 20, C.noche, 3) + '<text x="160" y="47" text-anchor="middle" font-family="Roboto,sans-serif" font-size="12" font-weight="500" fill="' + C.oro + '" letter-spacing="2">PASTICCERIA · KONDITOREI</text>' +
+      taza(36, 82, '#4a2a17') + '<ellipse cx="64" cy="84" rx="12" ry="3" fill="' + C.bl + '"/>' +
+      '<path d="M160 116v-22a40 12 0 0 1 80 0v22z" fill="' + C.lad + '"/><ellipse cx="200" cy="94" rx="40" ry="10" fill="' + C.lad2 + '"/><path d="M168 104h64" stroke="' + C.lad3 + '" stroke-width="2"/>' +
+      '<g fill="' + C.lad3 + '"><circle cx="184" cy="92" r="3"/><circle cx="200" cy="96" r="3"/><circle cx="216" cy="92" r="3"/></g>' + R(256, 96, 34, 20, '#4a2a17', 3) + '<path d="M262 96v20M272 96v20M282 96v20" stroke="' + C.lad3 + '"/>';
+  };
+  var fondue = function () {
+    return mesa() + '<path d="M110 82h100v20a50 26 0 0 1-100 0z" fill="' + C.rojo + '"/><ellipse cx="160" cy="82" rx="50" ry="10" fill="' + C.yema + '"/>' +
+      R(124, 128, 72, 6, C.gr, 3) + '<path d="M130 128l-6-14M190 128l6-14" stroke="' + C.gr + '" stroke-width="3"/><path d="M146 136h28" stroke="' + C.naranja + '" stroke-width="4"/>' +
+      '<path d="M118 40l26 40M206 44l-30 36" stroke="' + C.gr + '" stroke-width="2.5"/>' + R(110, 32, 14, 12, C.lad, 3) + R(200, 36, 14, 12, C.lad, 3) +
+      '<g fill="' + C.lad + '"><rect x="40" y="96" width="18" height="16" rx="3"/><rect x="62" y="100" width="18" height="14" rx="3"/><rect x="240" y="98" width="18" height="16" rx="3"/><rect x="262" y="96" width="18" height="16" rx="3"/></g>' + suiza(296, 112);
+  };
+  var estacion = function () {
+    return montes(100, C.nieve, false) + R(0, 100, 320, 80, '#1a2c3f') + R(30, 56, 150, 60, C.piedra) + '<path d="M24 58h162l-12-14H36z" fill="' + C.gr + '"/>' +
+      R(60, 40, 90, 18, C.noche, 3) + '<text x="105" y="53" text-anchor="middle" font-family="Roboto,sans-serif" font-size="10" fill="' + C.oro + '" letter-spacing="1">ST. MORITZ</text>' +
+      ventanas(44, 70, 6, 1, 22, 0, C.noche, 12, 18) + bernina(10, 124, 4) + via(150) + '<circle cx="226" cy="70" r="12" fill="' + C.bl + '"/><path d="M226 63v7l5 3" stroke="' + C.noche + '" stroke-width="2" fill="none"/>' + R(225, 82, 2, 34, C.gr) + copos();
+  };
+  var morteratsch = function () {
+    return '<path d="M0 140L60 40l50 40 50-70 60 60 40-30 60 70v110H0z" fill="' + C.nieve + '"/><path d="M110 80l50-70 60 60" fill="none" stroke="' + C.bl + '" stroke-width="3"/>' +
+      '<path d="M130 58q30 30 20 80l30 0q-6-50 16-74z" fill="' + C.hielo + '"/><path d="M140 80q16 20 12 56M170 74q-4 30 2 62" stroke="#9fc4d8" stroke-width="2" fill="none"/>' +
+      R(0, 132, 320, 48, '#1a2c3f') + abeto(20, 150, .8, true) + abeto(300, 150, .8, true) + bernina(40, 122, 3) + via(148) + copos();
+  };
+  var montebello = function () {
+    return '<path d="M0 90L70 20l50 40 60-50 60 50 40-30 40 30v80H0z" fill="' + C.nieve + '"/><path d="M180 10l20 18-10-2z" fill="' + C.bl + '"/>' +
+      R(0, 90, 320, 90, '#d5e2ea') + '<path d="M-10 170C60 170 60 120 160 120S300 140 330 110" fill="none" stroke="' + C.gr + '" stroke-width="10"/><path d="M-10 170C60 170 60 120 160 120S300 140 330 110" fill="none" stroke="' + C.lad3 + '" stroke-width="3" stroke-dasharray="4 6"/>' +
+      '<g transform="rotate(-8 200 112)">' + bernina(140, 96, 2, .9) + '</g>' + abeto(40, 120, .7, true) + abeto(70, 128, .6, true) + copos();
+  };
+  var lagoBianco = function () {
+    return '<path d="M0 100L60 40l40 30 50-50 60 60 50-40 60 60z" fill="' + C.nieve + '"/>' + R(0, 98, 320, 82, C.bl) +
+      '<ellipse cx="200" cy="138" rx="120" ry="22" fill="' + C.hielo + '"/><ellipse cx="60" cy="132" rx="40" ry="10" fill="#1a2c3f"/>' +
+      '<path d="M150 134h40M210 144h50" stroke="' + C.bl + '" stroke-width="3" stroke-linecap="round"/>' + R(230, 84, 54, 26, C.lad2) + '<path d="M224 86l33-16 33 16z" fill="' + C.ladr + '"/>' + ventanas(238, 92, 3, 1, 14, 0, C.yema, 7, 8) +
+      bernina(10, 104, 2, .8) + copos();
+  };
+  var alpGrum = function () {
+    return '<path d="M0 120L50 40l50 60 40-30 40 80z" fill="' + C.nieve + '"/><path d="M180 180L230 90l90 20v70z" fill="' + C.verde2 + '"/>' +
+      '<path d="M120 180q40-70 110-70l90 0v70z" fill="' + C.lago + '" opacity=".8"/>' + R(0, 120, 180, 60, C.bl) +
+      R(30, 90, 80, 40, C.lad2) + '<path d="M22 92l48-26 48 26z" fill="' + C.ladr + '"/>' + R(34, 104, 72, 16, C.noche, 3) +
+      '<text x="70" y="116" text-anchor="middle" font-family="Roboto,sans-serif" font-size="9" fill="' + C.oro + '" letter-spacing="1">ALP GRÜM</text>' +
+      bernina(100, 138, 2, .8) + R(0, 160, 200, 4, C.gr) + abeto(160, 132, .7, true) + copos();
+  };
+  var palmera = function (x, y) {
+    var h = '', k;
+    for (k = 0; k < 6; k++) { var a = Math.PI + k * Math.PI / 5; h += '<path d="M' + x + ' ' + (y - 70) + 'q' + (24 * Math.cos(a)).toFixed(1) + ' ' + (-14 + 20 * Math.sin(a)).toFixed(1) + ' ' + (40 * Math.cos(a)).toFixed(1) + ' ' + (14 + 24 * Math.sin(a) * 0.4).toFixed(1) + '" stroke="' + C.verde + '" stroke-width="6" fill="none" stroke-linecap="round"/>'; }
+    return '<path d="M' + (x - 3) + ' ' + y + 'q6-34 0-70h6q-2 36 0 70z" fill="' + C.lad3 + '"/>' + h;
+  };
+  var tirano = function () {
+    return sol(260, 46, 18) + montes(110, C.verde2, true) + suelo(150) + R(110, 70, 140, 80, C.piedra) + '<path d="M104 72h152l-10-14H114z" fill="' + C.ladr + '"/>' +
+      R(140, 52, 80, 18, C.noche, 3) + '<text x="180" y="65" text-anchor="middle" font-family="Roboto,sans-serif" font-size="11" fill="' + C.oro + '" letter-spacing="2">TIRANO</text>' +
+      ventanas(124, 86, 6, 1, 20, 0, C.noche, 10, 18) + bernina(110, 118, 2, .9) + via(144) + palmera(50, 150) + palmera(292, 150) + italia(80, 150);
+  };
+  var vueltaBus = function () { return luna(60, 34) + '<path d="M0 110L60 60l40 30 50-50 60 60 50-40 60 50v70H0z" fill="#1a2c3f"/>' + R(0, 130, 320, 50, C.suelo) + '<path d="M0 158h320" stroke="' + C.yema + '" stroke-width="2" stroke-dasharray="16 14" opacity=".6"/>' + bus(100, 96, true); };
+
+  /* ---------- 30: MILÁN ---------- */
+  var desayunoMilan = function () {
+    return mesa() + sol(150, 38, 14) + taza(40, 84, '#d9b38c') + '<path d="M54 88c10 4 26 4 36 0" stroke="' + C.lad3 + '" stroke-width="2" fill="none"/>' +
+      '<path d="M180 116c6-30 30-40 50-40s44 10 50 40c-16-6-34-8-50-8s-34 2-50 8z" fill="' + C.lad + '"/><path d="M206 84l8 28M230 78v32M254 84l-8 28" stroke="' + C.lad3 + '" stroke-width="2"/>' +
+      R(196, 30, 70, 22, C.noche, 3) + '<text x="231" y="46" text-anchor="middle" font-family="Roboto,sans-serif" font-size="12" fill="' + C.oro + '" letter-spacing="3">BAR</text>';
+  };
+  var duomoMilan = function (noche) {
+    var agujas = [64, 84, 104, 124, 196, 216, 236, 256].map(function (x, i) { var y = 40 + (i % 2) * 8; return R(x - 3, y, 6, 30, C.bl) + '<path d="M' + (x - 3) + ' ' + y + 'l3-16 3 16z" fill="' + C.bl + '"/>'; }).join('');
+    return suelo(150, noche ? C.suelo : '#5a6b7c') + R(60, 66, 200, 84, noche ? '#e8d9b0' : C.bl) + '<path d="M60 66l100-30 100 30z" fill="' + (noche ? '#d6c49a' : C.nieve) + '"/>' + agujas +
+      '<path d="M157 36l3-30 3 30z" fill="' + C.bl + '"/><circle cx="160" cy="4" r="3" fill="' + C.oro + '"/>' + arcos(78, 96, 6, 14, 30, 30, noche ? C.yema : C.gr) +
+      '<path d="M144 150v-34a16 16 0 0 1 32 0v34z" fill="' + C.noche + '"/>' + arcos(74, 120, 2, 12, 30, 22, C.noche) + arcos(220, 120, 2, 12, 30, 22, C.noche) +
+      (noche ? '' : '<g fill="' + C.noche + '"><circle cx="40" cy="160" r="3"/><circle cx="290" cy="164" r="3"/><circle cx="20" cy="170" r="2"/></g>') + arbolNavidad(30, 150, 60);
+  };
+  var galleria = function () {
+    return R(0, 0, 320, 180, C.lad) + '<path d="M60 180V80a100 70 0 0 1 200 0v100z" fill="' + C.cielo + '"/>' +
+      '<g fill="none" stroke="' + C.lad3 + '" stroke-width="2">' + [0, 1, 2, 3, 4, 5].map(function (k) { return '<path d="M' + (80 + k * 32) + ' 180V84"/>'; }).join('') + '<path d="M60 100h200M60 120h200"/></g>' +
+      '<path d="M60 80a100 70 0 0 1 200 0" fill="none" stroke="' + C.oro + '" stroke-width="4"/>' + ventanas(14, 40, 2, 4, 20, 34, C.lad3, 10, 18) + ventanas(276, 40, 2, 4, 20, 34, C.lad3, 10, 18) +
+      arbolNavidad(160, 168, 74) + '<ellipse cx="160" cy="172" rx="44" ry="6" fill="' + C.bl + '" opacity=".2"/>';
+  };
+  var scala = function () {
+    return suelo(150, '#5a6b7c') + R(40, 60, 240, 90, C.piedra) + R(40, 54, 240, 8, C.gr) + R(100, 30, 120, 26, C.piedra) + '<path d="M96 32l64-18 64 18z" fill="' + C.gr + '"/>' +
+      R(90, 96, 140, 54, '#d8cba9') + [100, 128, 156, 184, 212].map(function (x) { return R(x, 100, 8, 50, C.bl); }).join('') + ventanas(54, 72, 2, 1, 18, 0, C.noche, 10, 16) + ventanas(250, 72, 2, 1, 18, 0, C.noche, 10, 16) +
+      ventanas(108, 70, 5, 1, 24, 0, C.noche, 10, 16) + '<g fill="' + C.oro + '"><path d="M24 40v20a5 5 0 1 1-3-4V36l14-3v20a5 5 0 1 1-3-4V38z"/><path d="M296 46v14a4 4 0 1 1-3-3V44z"/></g>';
+  };
+  var camparino = function () {
+    var mosaico = '', i;
+    for (i = 0; i < 16; i++) mosaico += R(i * 20, 0, 18, 18, i % 2 ? C.lad : C.lad2) + R(i * 20 + 4, 22, 10, 10, [C.oro, C.tq2, C.rojo][i % 3]);
+    return mosaico + R(0, 36, 320, 80, '#1a2c3f') + '<g fill="' + C.lad2 + '">' + [30, 60, 90, 230, 260, 290].map(function (x) { return R(x - 6, 50, 12, 40, C.rojo, 4); }).join('') + '</g>' +
+      mesa() + '<g transform="translate(160 116)"><path d="M-18-62h36l-4 48h-28z" fill="' + C.bl + '" opacity=".85"/><path d="M-15-50h30l-3 34h-24z" fill="' + C.rojo + '"/><circle cx="10" cy="-56" r="6" fill="' + C.naranja + '"/></g>' +
+      '<ellipse cx="230" cy="112" rx="30" ry="7" fill="' + C.bl + '"/><g fill="' + C.verde + '"><circle cx="218" cy="106" r="5"/><circle cx="232" cy="104" r="5"/><circle cx="244" cy="106" r="5"/></g>' +
+      '<ellipse cx="90" cy="112" rx="24" ry="6" fill="' + C.bl + '"/><g fill="' + C.yema + '"><path d="M76 108l8-6 6 6zM90 106l8-6 6 6z"/></g>';
+  };
+  var comidaMilan = function () {
+    return mesa() + '<ellipse cx="96" cy="116" rx="58" ry="10" fill="' + C.bl + '"/><path d="M60 112q36-46 72 0z" fill="' + C.lad + '"/><path d="M66 112q30-36 60 0" fill="none" stroke="' + C.lad2 + '" stroke-width="2"/>' +
+      '<path d="M190 116l40-66 40 66z" fill="' + C.lad + '"/><path d="M198 108l32-50 32 50z" fill="' + C.rojo + '"/><g fill="' + C.bl + '"><circle cx="222" cy="92" r="5"/><circle cx="240" cy="100" r="5"/><circle cx="230" cy="76" r="4"/></g><g fill="' + C.verde + '"><circle cx="216" cy="102" r="2.5"/><circle cx="234" cy="86" r="2.5"/></g>' + italia(288, 116);
+  };
+  var darsena = function () {
+    return sol(240, 80, 28, C.naranja) + R(0, 70, 320, 40, '#c9774b') + ventanas(10, 78, 12, 1, 26, 0, C.noche, 10, 14) + R(0, 104, 320, 8, C.lad3) + R(0, 112, 320, 68, C.lago) + ondas(130, C.oro) +
+      '<path d="M70 140h70l-10 12h-50z" fill="' + C.bl + '"/>' + R(98, 118, 4, 22, C.gr) + '<path d="M102 120l24 14h-24z" fill="' + C.yema + '"/>' + farola(20, 104, 30) + farola(300, 104, 30);
+  };
+  var navigli = function (noche) {
+    return (noche ? luna(280, 30) : sol(160, 60, 22, C.naranja)) + R(0, 30, 120, 86, noche ? '#5a3a2a' : '#c9774b') + R(200, 30, 120, 86, noche ? '#4a3a3a' : '#d9a25b') +
+      ventanas(12, 44, 4, 2, 26, 30, C.yema, 12, 18) + ventanas(212, 44, 4, 2, 26, 30, C.yema, 12, 18) +
+      R(0, 116, 320, 8, C.lad3) + R(0, 124, 320, 56, noche ? '#0e2f3a' : C.lago) + ondas(138, C.yema) +
+      guirnalda(0, 320, 26) + '<path d="M120 124q40-40 80 0" fill="none" stroke="' + C.gr + '" stroke-width="5"/>' +
+      copaAperol(70, 178, .9) + copaAperol(250, 178, .9);
+  };
+  var hotelNoche = function () {
+    var v = '', x, y;
+    for (y = 54; y < 150; y += 24) for (x = 96; x < 224; x += 22) v += R(x, y, 12, 14, (x + y) % 3 ? C.oro : C.noche);
+    return luna(264, 40) + R(84, 40, 152, 124, C.lad2) + R(80, 34, 160, 8, C.lad3) + v + R(146, 140, 28, 24, C.tq2) +
+      '<text x="160" y="30" text-anchor="middle" font-family="Roboto,sans-serif" font-size="12" fill="' + C.oro + '" letter-spacing="3">HOTEL</text>' + suelo(164);
+  };
+  var fuegos = function (x, y, r, c) {
+    var s = '', k;
+    for (k = 0; k < 12; k++) { var a = k * Math.PI / 6; s += '<path d="M' + (x + r * .3 * Math.cos(a)).toFixed(1) + ' ' + (y + r * .3 * Math.sin(a)).toFixed(1) + 'L' + (x + r * Math.cos(a)).toFixed(1) + ' ' + (y + r * Math.sin(a)).toFixed(1) + '" stroke="' + c + '" stroke-width="2.5" stroke-linecap="round"/>'; }
+    return s;
+  };
+  var portadaNav = function () {
+    var pilares = '', k;
+    for (k = 0; k < 6; k++) pilares += '<path d="M' + (20 + k * 50) + ' 180v-46a22 22 0 0 1 44 0v46z" fill="#1a2c3f"/>';
+    return '<path d="M0 110L60 30l40 40 60-60 60 60 40-30 60 60v80H0z" fill="' + C.nieve + '"/><path d="M160 10l14 14-8-2z" fill="' + C.bl + '"/>' +
+      R(0, 100, 320, 80, C.lad2) + pilares + R(0, 98, 320, 8, C.lad3) + bernina(28, 72, 4) + abeto(10, 110, .8, true) + abeto(300, 110, .8, true) + copos() + suiza(286, 60) + italia(16, 60);
+  };
+
+  ILU['n28-riforma'] = marco(riforma());
+  ILU['n28-mercadillo'] = marco(mercadillo());
+  ILU['n28-lago'] = marco(lagoLugano());
+  ILU['n28-ciani'] = marco(ciani());
+  ILU['n28-bre'] = marco(funicularBre());
+  ILU['n28-comida'] = marco(comidaLugano());
+  ILU['n28-duomo'] = marco(duomoComo());
+  ILU['n28-balocchi'] = marco(balocchi(), C.noche);
+  ILU['n28-lungolago'] = marco(lagoComo(true) + guirnalda(0, 320, 20) + arbolNavidad(280, 152, 50), C.noche);
+  ILU['n28-tren'] = marco('<path d="M0 112l40-30 40 30z" fill="' + C.verde2 + '"/>' + salvatore() + R(0, 112, 320, 30, C.lago) + ondas(120) + R(0, 142, 320, 38, C.suelo) + bernina(30, 116, 3) + via(142) + suiza(20, 70) + italia(280, 70));
+  ILU['n28-vuelta'] = marco(vueltaMilan(), C.noche);
+  ILU['n29-bus'] = marco(salidaBus());
+  ILU['n29-stmoritz'] = marco(stMoritz());
+  ILU['n29-pasteleria'] = marco(pasteleria());
+  ILU['n29-comida'] = marco(fondue());
+  ILU['n29-estacion'] = marco(estacion());
+  ILU['n29-morteratsch'] = marco(morteratsch());
+  ILU['n29-montebello'] = marco(montebello());
+  ILU['n29-bianco'] = marco(lagoBianco());
+  ILU['n29-alpgrum'] = marco(alpGrum());
+  ILU['n29-tirano'] = marco(tirano());
+  ILU['n29-vuelta'] = marco(vueltaBus(), C.noche);
+  ILU['n30-desayuno'] = marco(desayunoMilan());
+  ILU['n30-duomo'] = marco(duomoMilan(false));
+  ILU['n30-galleria'] = marco(galleria());
+  ILU['n30-scala'] = marco(scala());
+  ILU['n30-camparino'] = marco(camparino());
+  ILU['n30-comida'] = marco(comidaMilan());
+  ILU['n30-darsena'] = marco(darsena());
+  ILU['n30-navigli'] = marco(navigli(false));
+  ILU['n30-hotel'] = marco(hotelNoche(), C.noche);
+  ILU['n28-final'] = marco(lagoComo(true), C.noche);
+  ILU['n29-final'] = marco(luna(286, 30) + duomoMilan(true), C.noche);
+  ILU['n30-final'] = marco(fuegos(70, 40, 26, C.yema) + fuegos(250, 36, 30, C.tq) + navigli(true) + '<text x="160" y="22" text-anchor="middle" font-family="Roboto,sans-serif" font-size="18" font-weight="700" fill="' + C.oro + '">2027</text>', C.noche);
+  ILU['nav-portada'] = marco(portadaNav());
+})();
+
+/* ====== RUTA DE NAVIDAD: MILÁN Y SUIZA (27–31 de diciembre de 2026) ======
+   27: llegada a Milán por la noche (sin ruta) · 31: vuelo de vuelta (sin ruta).
+   Cada día es una ruta: se entra desde la tarjeta «Navidad: Milán y Suiza».
+   Las horas son orientativas: si el bus o el tren van a otra hora, tocad la hora en el Resumen y el resto se ajusta solo. */
+var NAV_RANGOS = [[0, 'Turistas'], [150, 'Viajeros'], [300, 'Exploradores alpinos'], [450, 'Maestros del Bernina'], [600, 'Leyendas de la Navidad']];
+var LUGANO = {
+  id: 'lugano',
+  portada: 'n28-ciani',
+  titulo: 'Lugano en Navidad',
+  juego: 'Conquista Lugano',
+  ciudad: 'Lugano',
+  pais: 'Suiza',
+  fecha: '2026-12-28',
+  fechaTexto: 'Lunes 28 de diciembre',
+  inicio: '10:00',
+  fin: '15:15',
+  finExpres: '13:30',
+  nota: 'Por la tarde, sigue la ruta en Como',
+  centro: [46.0050, 8.9560],
+  epilogo: { hora: '16:00', titulo: 'Rumbo a Como', ilu: 'n28-duomo', ahora: '¡Rumbo a Como!', texto: 'La tarde sigue en Como: abrid «Conquista Como» desde Mis rutas. ¡Lugano conquistado!' },
+  rangos: NAV_RANGOS,
+  consejos: [
+    'Lugano está en Suiza: llevad el DNI y pagad en francos suizos o con tarjeta.',
+    'Después de Navidad, el mercadillo sigue en Piazza Manzoni, Via Luvini y Piazza Dante; el gran árbol está en Piazza della Riforma.',
+    'El funicular del Monte Brè sale de Cassarate, a unos 15 minutos andando del Parco Ciani (o en el bus 1).',
+    'Si vais justos de tiempo, haced la versión exprés: sin funicular ni paseo del lago.'
+  ],
+  paradas: [
+    { id: 'n28-riforma', hora: '10:00', nombre: 'Ayuntamiento y Piazza della Riforma', tipo: 'monumento', nivel: 3, lat: 46.00510, lng: 8.95140, dur: '25 min',
+      texto: 'La plaza principal de Lugano, con el Ayuntamiento (Palazzo Civico) y el gran árbol de Navidad iluminado delante.' },
+    { id: 'n28-mercadillo', hora: '10:30', nombre: 'Mercadillos de Navidad', tipo: 'paseo', nivel: 3, lat: 46.00430, lng: 8.95300, dur: '50 min',
+      texto: 'Casetas de madera con artesanía, dulces y vino caliente entre Piazza Manzoni, Via Luvini y Piazza Dante.' },
+    { id: 'n28-lago', hora: '11:30', nombre: 'Paseo por el lago de Lugano', tipo: 'paseo', nivel: 2, lat: 46.00400, lng: 8.95550, dur: '20 min',
+      texto: 'El paseo junto al lago, con el Monte San Salvatore enfrente. Caminad hacia el parque.' },
+    { id: 'n28-ciani', hora: '11:50', nombre: 'Parco Ciani y la puerta al lago', tipo: 'paseo', nivel: 3, lat: 46.00600, lng: 8.95900, dur: '30 min',
+      texto: 'El parque junto al agua y su famosa verja de hierro que se abre al lago, con las montañas detrás. La foto del viaje.' },
+    { id: 'n28-bre', hora: '12:30', nombre: 'Funicular del Monte Brè', tipo: 'paseo', nivel: 2, lat: 46.00570, lng: 8.96670, dur: '1 h 15 min',
+      texto: 'Un funicular histórico sube en unos 15 minutos hasta la cima, con todo el lago de Lugano y los Alpes a vuestros pies.' },
+    { id: 'n28-comida', hora: '13:45', nombre: 'Comida en Lugano', tipo: 'comida', nivel: 2, dur: '1 h 15 min',
+      texto: 'Comed arriba en el Monte Brè con vistas o abajo en el centro. Algo del Tesino: polenta, risotto o luganighetta.' },
+    { id: 'n28-tren', hora: '15:15', nombre: 'Tren hacia Como', tipo: 'paseo', nivel: 1, dur: '',
+      texto: 'De Lugano a Como en tren, en unos 40 minutos. Al cruzar la frontera, ya estáis en Italia.' }
+  ],
+  comidas: []
+};
+var COMO = {
+  id: 'como',
+  portada: 'n28-balocchi',
+  titulo: 'Como en Navidad',
+  juego: 'Conquista Como',
+  ciudad: 'Como',
+  pais: 'Italia',
+  fecha: '2026-12-28',
+  fechaTexto: 'Lunes 28 de diciembre',
+  inicio: '16:00',
+  fin: '18:00',
+  finExpres: '17:30',
+  nota: 'El lago iluminado y de vuelta a Milán',
+  centro: [45.8130, 9.0810],
+  epilogo: { hora: '19:00', titulo: 'De vuelta a Milán', ilu: 'n28-final', ahora: '¡De vuelta a Milán!', texto: 'Último vistazo al lago de Como iluminado y de vuelta a Milán a cenar. ¡Como conquistado!' },
+  rangos: NAV_RANGOS,
+  consejos: [
+    'Es una ruta muy corta, de unas dos horas, ideal para el final de la tarde.',
+    'Con la Città dei Balocchi el centro se llena de luces y mercadillos: id sin prisa.'
+  ],
+  paradas: [
+    { id: 'n28-duomo', hora: '16:00', nombre: 'Duomo de Como', tipo: 'monumento', nivel: 3, lat: 45.81160, lng: 9.08450, dur: '25 min',
+      texto: 'Ya en Italia. La catedral de mármol con su gran cúpula verde, en pleno centro de Como.' },
+    { id: 'n28-balocchi', hora: '16:30', nombre: 'Città dei Balocchi', tipo: 'paseo', nivel: 3, lat: 45.81300, lng: 9.08230, dur: '45 min',
+      texto: 'La Navidad de Como: mercadillos por el centro, luces proyectadas en los edificios y ambiente de fiesta junto a Piazza Cavour.' },
+    { id: 'n28-lungolago', hora: '17:15', nombre: 'Lago de Como iluminado', tipo: 'paseo', nivel: 2, lat: 45.81550, lng: 9.07700, dur: '30 min',
+      texto: 'Paseo por la orilla, de Piazza Cavour hacia el Tempio Voltiano, con el lago ya de noche.' },
+    { id: 'n28-vuelta', hora: '18:00', nombre: 'Regreso a Milán', tipo: 'paseo', nivel: 1, dur: '',
+      texto: 'Vuelta a Milán en tren o en bus, según la opción contratada.' }
+  ],
+  comidas: []
+};
+var BERNINA = {
+  id: 'bernina',
+  portada: 'nav-portada',
+  titulo: 'St. Moritz y Bernina Express',
+  juego: 'Tren Bernina',
+  ciudad: 'St. Moritz y Bernina',
+  pais: 'Suiza',
+  fecha: '2026-12-29',
+  fechaTexto: 'Martes 29 de diciembre',
+  inicio: '07:00',
+  fin: '16:00',
+  finExpres: '16:00',
+  nota: 'De los glaciares a las palmeras, en el tren panorámico',
+  centro: [46.3600, 9.9900],
+  epilogo: { hora: '20:30', titulo: 'Cena en Milán', ilu: 'n29-final', ahora: '¡De vuelta en Milán!', texto: 'Llegada a Milán a última hora de la tarde y cena tranquila. ¡El tren más bonito del mundo, conquistado!' },
+  rangos: NAV_RANGOS,
+  consejos: [
+    'Las horas del bus y del tren son orientativas: si vuestro billete dice otra hora, tocadla en el Resumen y el resto se ajusta solo.',
+    'Abrigaos bien: en St. Moritz y en el paso del Bernina hace mucho frío en diciembre.',
+    'En el tren, los niveles del recorrido se marcan solos al pasar cerca. Si no, plantad la bandera a mano.',
+    'Mirad a la derecha al salir de St. Moritz para ver el glaciar de Morteratsch.'
+  ],
+  paradas: [
+    { id: 'n29-bus', hora: '07:00', nombre: 'Salida en bus desde Piazza della Repubblica', tipo: 'paseo', nivel: 1, lat: 45.48000, lng: 9.20050, dur: '3 h 30 min',
+      texto: 'Bus temprano desde Milán hacia St. Moritz. A dormir un poco: el día es largo.' },
+    { id: 'n29-stmoritz', hora: '10:30', nombre: 'St. Moritz y su lago', tipo: 'paseo', nivel: 3, lat: 46.49350, lng: 9.84200, dur: '45 min',
+      texto: 'Paseo panorámico por el lago, normalmente helado y nevado en invierno, con el pueblo y su torre inclinada encima.' },
+    { id: 'n29-pasteleria', hora: '11:15', nombre: 'Pastelería y chocolate caliente', tipo: 'comida', nivel: 2, lat: 46.49830, lng: 9.83950, dur: '40 min',
+      texto: 'Dulces de la Engadina en una de las pastelerías del centro: probad la tarta de nueces con un chocolate caliente.' },
+    { id: 'n29-comida', hora: '12:00', nombre: 'Comida en St. Moritz', tipo: 'comida', nivel: 2, dur: '1 h',
+      texto: 'Algo caliente antes del tren: una fondue, un rösti o una sopa de cebada de los Grisones.' },
+    { id: 'n29-estacion', hora: '13:15', nombre: 'Estación de St. Moritz', tipo: 'paseo', nivel: 2, lat: 46.49800, lng: 9.84500, dur: '20 min',
+      texto: 'Subid al Bernina Express, al vagón panorámico de techo de cristal. ¡Empieza lo mejor del viaje!' },
+    { id: 'n29-morteratsch', hora: '13:45', nombre: 'Glaciar de Morteratsch', tipo: 'paseo', nivel: 3, lat: 46.45310, lng: 9.93610, dur: '10 min',
+      texto: 'Desde el tren, la gran lengua de hielo bajando entre las montañas.' },
+    { id: 'n29-montebello', hora: '13:55', nombre: 'Curva de Montebello', tipo: 'paseo', nivel: 3, lat: 46.44370, lng: 9.95300, dur: '10 min',
+      texto: 'La curva más famosa del recorrido: el tren gira y aparece de frente todo el macizo del Bernina con sus glaciares.' },
+    { id: 'n29-bianco', hora: '14:15', nombre: 'Lago Bianco y Lej Nair', tipo: 'paseo', nivel: 3, lat: 46.41030, lng: 10.02300, dur: '15 min',
+      texto: 'En lo más alto del paso del Bernina: el lago Blanco y, a su lado, el lago Negro. En invierno, todo blanco.' },
+    { id: 'n29-alpgrum', hora: '14:30', nombre: 'Alp Grüm', tipo: 'paseo', nivel: 2, lat: 46.37400, lng: 10.03100, dur: '10 min',
+      texto: 'Una estación colgada sobre el valle, con el glaciar del Palü arriba y el lago de Poschiavo abajo.' },
+    { id: 'n29-tirano', hora: '15:30', nombre: 'Tirano', tipo: 'monumento', nivel: 3, lat: 46.21600, lng: 10.16600, dur: '30 min',
+      texto: 'Final del tren, ya en Italia: de los glaciares a las palmeras en unas horas. ¡Bernina Express completado!' },
+    { id: 'n29-vuelta', hora: '16:00', nombre: 'Bus de vuelta a Milán', tipo: 'paseo', nivel: 1, dur: '',
+      texto: 'Bus de regreso a Milán, con llegada a última hora de la tarde.' }
+  ],
+  comidas: []
+};
+var MILAN = {
+  id: 'milan',
+  portada: 'n30-navigli',
+  titulo: 'Milán: Duomo y Navigli',
+  juego: 'Conquista Milán',
+  ciudad: 'Milán',
+  pais: 'Italia',
+  fecha: '2026-12-30',
+  fechaTexto: 'Miércoles 30 de diciembre',
+  inicio: '09:30',
+  fin: '18:00',
+  finExpres: '18:00',
+  nota: 'Al atardecer, Aperol Spritz en los Navigli',
+  centro: [45.4600, 9.1860],
+  epilogo: { hora: '20:00', titulo: 'Última noche en los Navigli', ilu: 'n30-final', ahora: '¡Última noche en Milán!', texto: 'Cena junto a los canales y a despedir el viaje. ¡Nos vemos en 2027!' },
+  rangos: NAV_RANGOS,
+  consejos: [
+    'Para subir a las terrazas del Duomo, comprad la entrada con antelación.',
+    'En la Galleria, la tradición es girar con el talón sobre el toro del mosaico del suelo: dicen que da suerte.',
+    'El atardecer es hacia las 16:50: llegad a los Navigli antes para pillar sitio con vistas al canal.'
+  ],
+  paradas: [
+    { id: 'n30-desayuno', hora: '09:30', nombre: 'Cappuccino y cornetto', tipo: 'comida', nivel: 2, dur: '40 min',
+      texto: 'Desayuno a la italiana, de pie en la barra de un bar: cappuccino y cornetto.' },
+    { id: 'n30-duomo', hora: '10:15', nombre: 'Duomo de Milán', tipo: 'monumento', nivel: 3, lat: 45.46410, lng: 9.19190, dur: '1 h',
+      texto: 'La catedral de mármol blanco con más de cien agujas. Si podéis, subid a las terrazas del tejado.' },
+    { id: 'n30-galleria', hora: '11:20', nombre: 'Galleria Vittorio Emanuele II', tipo: 'monumento', nivel: 3, lat: 45.46590, lng: 9.19000, dur: '30 min',
+      texto: 'La galería de cristal y hierro junto al Duomo, decorada por Navidad. Buscad el toro del suelo.' },
+    { id: 'n30-scala', hora: '11:50', nombre: 'Teatro alla Scala', tipo: 'monumento', nivel: 2, lat: 45.46740, lng: 9.18950, dur: '20 min',
+      texto: 'Al otro lado de la Galleria, el teatro de ópera más famoso del mundo.' },
+    { id: 'n30-camparino', hora: '12:15', nombre: 'Aperitivo en el Camparino', tipo: 'comida', nivel: 1, lat: 45.46550, lng: 9.19030, dur: '30 min',
+      texto: 'El bar histórico de la entrada de la Galleria, donde nació el Campari. Un aperitivo de pie en la barra.' },
+    { id: 'n30-comida', hora: '13:00', nombre: 'Comida en el centro', tipo: 'comida', nivel: 2, eleccion: true, dur: '1 h 15 min',
+      texto: 'Comida rápida y muy milanesa a dos pasos del Duomo. Elegid sitio y después, tiempo libre para compras.' },
+    { id: 'n30-darsena', hora: '16:00', nombre: 'La Darsena', tipo: 'paseo', nivel: 2, lat: 45.45370, lng: 9.17800, dur: '20 min',
+      texto: 'El antiguo puerto de Milán, donde empiezan los canales. Desde aquí, a pasear por la orilla.' },
+    { id: 'n30-navigli', hora: '16:30', nombre: 'Aperol Spritz en los Navigli', tipo: 'comida', nivel: 3, lat: 45.45150, lng: 9.17450, dur: '1 h 15 min',
+      texto: 'Los canales con sus terrazas y sus puentes. Aperol Spritz al atardecer, con el aperitivo de picoteo: así se cierra el día.' },
+    { id: 'n30-hotel', hora: '18:00', nombre: 'Regreso al hotel', tipo: 'hotel', nivel: 1, dur: '',
+      texto: 'Descansad un rato y preparad la maleta: mañana toca volver a casa.' }
+  ],
+  comidas: [
+    { id: 'luini', nombre: 'Luini', zona: 'Via Santa Radegonda', lat: 45.46580, lng: 9.19170,
+      texto: 'Los famosos panzerotti, empanadillas fritas de mozzarella y tomate. Se comen en la calle.', porque: 'Rápido, barato y típico.' },
+    { id: 'spontini', nombre: 'Spontini', zona: 'Via Santa Radegonda', lat: 45.46600, lng: 9.19140,
+      texto: 'Pizza al trancio: porciones gruesas y esponjosas con mucha mozzarella.', porque: 'Si os apetece pizza.' },
+    { id: 'trattoria', nombre: 'Trattoria Milanese', zona: 'Via Santa Marta', lat: 45.46300, lng: 9.18300,
+      texto: 'Trattoria de siempre: risotto alla milanese y cotoletta.', porque: 'Para sentarse y comer lo más milanés.' }
+  ]
+};
+Object.assign(JUEGO, {
+  'n28-riforma': { insignia: 'Ayuntamiento', expres: '10:00', reto: 'Foto juntos delante del gran árbol de Navidad.' },
+  'n28-mercadillo': { insignia: 'Mercadillo', expres: '10:30', reto: 'Brindad con un vino caliente o un chocolate del mercadillo.' },
+  'n28-lago': { insignia: 'Lago de Lugano', reto: 'Foto con el Monte San Salvatore detrás.' },
+  'n28-ciani': { insignia: 'La puerta', expres: '11:30', reto: 'La foto de la verja abierta al lago: vosotros en el centro.' },
+  'n28-bre': { insignia: 'Funicular', reto: 'Foto desde arriba con todo el lago detrás.' },
+  'n28-comida': { insignia: 'Tesino', expres: '12:15', reto: 'Foto del plato más típico que pidáis.' },
+  'n28-duomo': { insignia: 'Duomo de Como', expres: '16:00', reto: 'Foto con la cúpula verde detrás.' },
+  'n28-balocchi': { insignia: 'Balocchi', expres: '16:30', reto: 'Encontrad la luz de Navidad más bonita y foto con ella.' },
+  'n28-lungolago': { insignia: 'Lago de Como', reto: 'Foto con el lago de noche y las luces reflejadas.' },
+  'n28-vuelta': { insignia: 'Como', expres: '17:30', reto: 'Foto cansados pero felices en el viaje de vuelta.' },
+  'n28-tren': { insignia: 'Frontera', expres: '13:30', reto: 'Foto en el tren justo al pasar a Italia.' },
+  'n29-bus': { insignia: 'Madrugadores', expres: '07:00', reto: 'Foto de las caras de sueño antes de salir.' },
+  'n29-stmoritz': { insignia: 'St. Moritz', expres: '10:30', reto: 'Foto con el lago helado y la torre inclinada.' },
+  'n29-pasteleria': { insignia: 'Pastelería', expres: '11:15', reto: 'Foto brindando con los chocolates calientes.' },
+  'n29-comida': { insignia: 'Fondue', expres: '12:00', reto: 'Foto del primer bocado caliente.' },
+  'n29-estacion': { insignia: 'Al tren', expres: '13:15', reto: 'Foto junto al tren rojo antes de subir.' },
+  'n29-morteratsch': { insignia: 'Glaciar', expres: '13:45', reto: 'Foto del glaciar desde la ventana.' },
+  'n29-montebello': { insignia: 'Montebello', expres: '13:55', reto: 'Foto de la curva con el tren y las montañas.' },
+  'n29-bianco': { insignia: 'Lago Bianco', expres: '14:15', reto: 'Foto del lago Blanco y el lago Negro juntos.' },
+  'n29-alpgrum': { insignia: 'Alp Grüm', expres: '14:30', reto: 'Foto del valle desde lo alto.' },
+  'n29-tirano': { insignia: 'Bernina Express', expres: '15:30', reto: 'Foto en Tirano junto al tren que os ha traído.' },
+  'n29-vuelta': { insignia: 'Día de tren', expres: '16:00', reto: 'Elegid la mejor foto del día y mandádsela a alguien.' },
+  'n30-desayuno': { insignia: 'Cappuccino', expres: '09:30', reto: 'Foto del cappuccino con su dibujo de espuma.' },
+  'n30-duomo': { insignia: 'Duomo', expres: '10:15', reto: 'Foto con las agujas del Duomo detrás (o desde el tejado).' },
+  'n30-galleria': { insignia: 'Galleria', expres: '11:20', reto: 'Girad con el talón sobre el toro del suelo y grabadlo.' },
+  'n30-scala': { insignia: 'La Scala', expres: '11:50', reto: 'Foto en la puerta del teatro como si fuerais a la ópera.' },
+  'n30-camparino': { insignia: 'Camparino', reto: 'Brindis en la barra del Camparino.' },
+  'n30-comida': { insignia: 'Milanesa', expres: '12:30', reto: 'Foto del primer bocado.' },
+  'n30-darsena': { insignia: 'Darsena', reto: 'Foto con el agua y los barcos de la Darsena.' },
+  'n30-navigli': { insignia: 'Aperol Spritz', expres: '16:30', reto: 'Brindis con Aperol al atardecer sobre el canal.' },
+  'n30-hotel': { insignia: 'Fin del viaje', expres: '18:00', reto: 'Foto de despedida de Milán.' }
+});
+RUTAS.lugano = LUGANO;
+RUTAS.como = COMO;
+RUTAS.bernina = BERNINA;
+RUTAS.milan = MILAN;
+var RUTA = (function () {
+  var a = null;
+  try { a = localStorage.getItem('miruta:activa'); } catch (e) { /* nada */ }
+  return RUTAS[a] || TOULOUSE;
+})();
+if (RUTA.rangos) RANGOS = RUTA.rangos;
+
 
 (function () {
   'use strict';
@@ -722,6 +1740,7 @@ var ILU = (function () {
   var $ = function (s) { return document.querySelector(s); };
   var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
   var K = 'miruta:' + RUTA.id + ':';
+  var DELPDF = RUTA.id === 'toulouse-pareja' ? 'del PDF' : 'de la ruta';
   var leer = function (k, d) { try { var v = localStorage.getItem(K + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
   var guardar = function (k, v) { try { localStorage.setItem(K + k, JSON.stringify(v)); } catch (e) { /* sin almacenamiento */ } };
   var ico = function (n) { return '<svg class="i" aria-hidden="true"><use href="#i-' + n + '"/></svg>'; };
@@ -733,9 +1752,8 @@ var ILU = (function () {
   var NIVEL = { 3: 'Prioridad', 2: 'Recomendado', 1: 'Si da tiempo' };
   var TAM = { 3: 46, 2: 38, 1: 30 };
   var XP = { llegada: 50, reto: 30, nivel: 20 };
-  var RELOJ = 'https://jfolivarl.github.io/mi-ruta/reloj.html';
   var RADIO = 60; /* metros del círculo de llegada (buffer) de cada parada */
-  var MODOS = { completa: { nombre: 'Completa', horas: '11:00–18:00' }, expres: { nombre: 'Exprés', horas: '11:00–15:30' } };
+  var MODOS = { completa: { nombre: 'Completa', horas: RUTA.inicio + '–' + RUTA.fin }, expres: { nombre: 'Exprés', horas: RUTA.inicio + '–' + (RUTA.finExpres || '15:30') } };
 
   function recta(a, b) {
     var r = Math.PI / 180, dLa = (b.lat - a.lat) * r, dLo = (b.lng - a.lng) * r;
@@ -752,7 +1770,7 @@ var ILU = (function () {
   /* ---------- Estado ---------- */
   var J = leer('juego2', null) || { equipo: ['', ''], empezado: false, modo: 'completa', m: {} };
   J.horas = J.horas || {}; J.extra = J.extra || []; J.quitadas = J.quitadas || {};
-  var st = { comida: leer('comida', RUTA.comidas[0].id), hotel: leer('hotel', null), modoHotel: false };
+  var st = { comida: leer('comida', RUTA.comidas.length ? RUTA.comidas[0].id : null), hotel: leer('hotel', null), modoHotel: false };
   var guardarJ = function () { guardar('juego2', J); };
   var mis = function (id) { return J.m[id] || (J.m[id] = {}); };
   var NIVELES = [], PUNTOS = {}, FOTOS = {};
@@ -798,10 +1816,10 @@ var ILU = (function () {
     var d = new Date(), hoy = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
     var m = d.getHours() * 60 + d.getMinutes(), hora = pad(d.getHours()) + ':' + pad(d.getMinutes());
     var ini = minutos(NIVELES[0].hora), fin = minutos(RUTA.epilogo.hora);
-    if (hoy < RUTA.fecha) return { hora: hora, t: 'La ruta es el ' + RUTA.fechaTexto.toLowerCase() + ' a las ' + NIVELES[0].hora, id: null };
-    if (hoy > RUTA.fecha) return { hora: hora, t: 'Ruta terminada. ¡Qué gran día!', id: null };
+    if (RUTA.fecha && hoy < RUTA.fecha) return { hora: hora, t: 'La ruta es el ' + RUTA.fechaTexto.toLowerCase() + ' a las ' + NIVELES[0].hora, id: null };
+    if (RUTA.fecha && hoy > RUTA.fecha) return { hora: hora, t: 'Ruta terminada. ¡Qué gran día!', id: null };
     if (m < ini) return { hora: hora, t: 'Empieza en ' + durTxt(ini - m) + ' en ' + NIVELES[0].nombre, id: null };
-    if (m >= fin) return { hora: hora, t: '¡Hora del concierto!', id: 'final' };
+    if (m >= fin) return { hora: hora, t: RUTA.epilogo.ahora || '¡Hora del concierto!', id: 'final' };
     var i = 0;
     NIVELES.forEach(function (p, k) { if (m >= minutos(p.hora)) i = k; });
     var p = NIVELES[i], sig = NIVELES[i + 1];
@@ -904,7 +1922,7 @@ var ILU = (function () {
         '<span class="carta-txt"><strong>' + esc(p.nombre) + '</strong><span class="carta-pie">' + marcas2(p.id) +
         '<span class="nv nv' + p.nivel + '">' + (ok ? 'Coronado' : (es ? 'Siguiente' : NIVEL[p.nivel])) + '</span></span></span><span class="ahora-t">Ahora</span></button>';
     }).join('') +
-    '<button type="button" class="carta final" data-hoja="logros"><span class="carta-ilu">' + ILU.final + '<span class="chip">' + RUTA.epilogo.hora + '</span></span>' +
+    '<button type="button" class="carta final" data-hoja="logros"><span class="carta-ilu">' + (ILU[RUTA.epilogo.ilu] || ILU.final) + '<span class="chip">' + RUTA.epilogo.hora + '</span></span>' +
       '<span class="carta-txt"><strong>' + esc(RUTA.epilogo.titulo) + '</strong><span class="carta-pie"><span class="nv nv3">Trofeos y álbum</span></span></span></button>';
   }
 
@@ -954,7 +1972,7 @@ var ILU = (function () {
       { nombre: 'Fotógrafos', icono: 'camara', ok: fotos.length >= 3 },
       { nombre: 'Ruta ' + MODOS[J.modo].nombre, icono: 'trofeo', ok: hechos === NIVELES.length }
     ];
-    return '<div class="hoja-hero">' + ILU.final + '<button type="button" class="redondo cerrar" data-cerrar="1" aria-label="Cerrar">' + ico('cerrar') + '</button><span class="chip">' + esc(RUTA.epilogo.titulo) + ' · ' + RUTA.epilogo.hora + '</span></div>' +
+    return '<div class="hoja-hero">' + (ILU[RUTA.epilogo.ilu] || ILU.final) + '<button type="button" class="redondo cerrar" data-cerrar="1" aria-label="Cerrar">' + ico('cerrar') + '</button><span class="chip">' + esc(RUTA.epilogo.titulo) + ' · ' + RUTA.epilogo.hora + '</span></div>' +
       '<div class="hoja-cuerpo"><h2 id="hoja-t">' + esc(r.nombre) + '</h2>' +
         '<p class="lugar">' + xp + ' XP' + (r.sig ? ' · faltan ' + (r.hasta - xp) + ' para ' + esc(r.sig) : ' · rango máximo') + '</p>' +
         '<div class="stats"><span><strong>' + hechos + '/' + NIVELES.length + '</strong>banderas</span><span><strong>' + fotos.length + '</strong>fotos</span><span><strong>' + xp + '</strong>XP</span></div>' +
@@ -967,7 +1985,7 @@ var ILU = (function () {
         '</div>' +
         '<h3 class="punto">Álbum</h3>' + (fotos.length ? '<div class="album">' + fotos.map(function (p) { return '<figure><img src="' + FOTOS[p.id] + '" alt="' + esc(p.nombre) + '"><figcaption>' + p.hora + ' · ' + esc(p.nombre) + '</figcaption></figure>'; }).join('') + '</div>' : '<p class="nota">Las fotos de los retos aparecerán aquí.</p>') +
         '<h3 class="punto">Pequeños detalles</h3><ul class="ver">' + RUTA.consejos.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul>' +
-        '<p class="nota creditos">Autor: <strong>Juan Felipe Olivar Londoño</strong> · Ruta: itinerario «Toulouse en pareja» · Mapas © OpenStreetMap y Esri · Leaflet.</p>' +
+        '<p class="nota creditos">Autor: <strong>Juan Felipe Olivar Londoño</strong> · Ruta: itinerario «' + esc(RUTA.titulo) + '» · Mapas © OpenStreetMap y Esri · Leaflet.</p>' +
         '<button type="button" class="pill peligro" data-a="reiniciar">' + ico('reiniciar') + (confirmar ? 'Pulsa otra vez para borrar todo' : 'Reiniciar el juego') + '</button>' +
       '</div>';
   }
@@ -993,20 +2011,18 @@ var ILU = (function () {
       }).join('') + '<li class="fin"><span class="itin-h">' + RUTA.epilogo.hora + '</span><span>' + esc(RUTA.epilogo.titulo) + '</span></li></ul>' +
       (pendientesPasadas().length ? '<button type="button" class="pill activa" data-a="dar-hechas">' + ico('bandera') + 'Dar por hechas las ' + pendientesPasadas().length + ' paradas anteriores</button>' : '') +
       '<div class="acciones"><button type="button" class="pill activa" data-a="anadir">' + ico('mas') + 'Añadir parada</button>' +
-      (cambiadas ? '<button type="button" class="pill" data-a="horas-pdf">' + ico('reiniciar') + 'Volver al horario del PDF</button>' : '') + '</div>' +
+      (cambiadas ? '<button type="button" class="pill" data-a="horas-pdf">' + ico('reiniciar') + 'Volver al horario ' + DELPDF + '</button>' : '') + '</div>' +
       (quitadas().length ? '<h3 class="punto">Paradas quitadas</h3><ul class="itin">' + quitadas().map(function (p) {
         return '<li class="quitada"><span class="itin-h">' + p.hora + '</span><span class="itin-n"><span><strong>' + esc(p.nombre) + '</strong></span></span><button type="button" class="pill" data-recuperar="' + p.id + '">Recuperar</button></li>';
       }).join('') + '</ul>' : '') +
       '<h3 class="punto">Copia de seguridad</h3><p class="nota">Guardad una copia de vuestro progreso y fotos en Archivos de vez en cuando. Si se pierde, se recupera desde aquí.</p>' +
       '<div class="acciones"><button type="button" class="pill activa" data-a="copia">' + ico('check') + 'Guardar copia</button>' +
       '<label class="pill">' + ico('reiniciar') + 'Recuperar copia<input type="file" accept=".json,application/json" data-restaurar="1" hidden></label></div>' +
-      '<h3 class="punto">En el Apple Watch</h3><p class="nota">Enviaos por Mensajes este enlace y abridlo en el reloj: veréis la hora, qué toca y la cuenta atrás.</p>' +
-      '<p class="enlace-reloj">' + RELOJ + '</p><button type="button" class="pill" data-a="copiar-reloj">' + ico('check') + 'Copiar enlace del reloj</button>' +
     '</div>';
   }
   function pendientesPasadas() {
     var d = new Date(), m = d.getHours() * 60 + d.getMinutes();
-    if (hoyISO() !== RUTA.fecha) return [];
+    if (RUTA.fecha && hoyISO() !== RUTA.fecha) return [];
     return NIVELES.filter(function (p, i) { var sig = NIVELES[i + 1]; return !superado(p.id) && sig && minutos(sig.hora) <= m; });
   }
   function hacerCopia() {
@@ -1081,7 +2097,7 @@ var ILU = (function () {
     return '<div class="modos" role="group" aria-label="Elegir ruta">' + Object.keys(MODOS).map(function (k) {
       var n = RUTA.paradas.filter(function (p) { return k === 'completa' || (JUEGO[p.id] || {}).expres; }).length;
       return '<button type="button" class="modo" data-modo="' + k + '" aria-pressed="' + (J.modo === k) + '"><strong>' + MODOS[k].nombre + '</strong><span>' + MODOS[k].horas + ' · ' + n + ' paradas</span>' +
-        '<small>' + (k === 'expres' ? 'Solo las prioridades del PDF y la comida' : 'El itinerario entero del PDF') + '</small></button>';
+        '<small>' + (k === 'expres' ? 'Solo las prioridades ' + DELPDF + ' y la comida' : 'El itinerario entero ' + DELPDF) + '</small></button>';
     }).join('') + '</div>';
   }
 
@@ -1546,18 +2562,38 @@ var ILU = (function () {
   function diasHasta(iso) { return Math.round((new Date(iso + 'T12:00') - new Date(hoyISO() + 'T12:00')) / 864e5); }
   function estadoRuta(r) {
     var h = hoyISO();
+    if (!r.desde) return { k: 'libre', t: 'Cuando queráis' };
     if (h >= r.desde && h <= r.hasta) return { k: 'hoy', t: r.desde === r.hasta ? 'Hoy' : 'En curso' };
     if (h < r.desde) { var n = diasHasta(r.desde); return { k: 'pronto', t: n === 1 ? 'Mañana' : 'Faltan ' + n + ' días' }; }
     return { k: 'pasada', t: 'Terminada' };
   }
+  var filtroPais = '';
+  var BANDERITA = {
+    'España': '<rect width="30" height="20" fill="#c60b1e"/><rect y="5" width="30" height="10" fill="#ffc400"/>',
+    'Francia': '<rect width="10" height="20" fill="#0055a4"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ef4135"/>',
+    'Italia': '<rect width="10" height="20" fill="#009246"/><rect x="10" width="10" height="20" fill="#fff"/><rect x="20" width="10" height="20" fill="#ce2b37"/>',
+    'Suiza': '<rect width="30" height="20" fill="#da291c"/><rect x="13" y="4" width="4" height="12" fill="#fff"/><rect x="9" y="8" width="12" height="4" fill="#fff"/>'
+  };
+  var banderita = function (p) { return BANDERITA[p] ? '<svg class="banderita" viewBox="0 0 30 20" aria-hidden="true">' + BANDERITA[p] + '</svg>' : ''; };
   function tarjetas() {
     var toca = CATALOGO.filter(function (r) { return estadoRuta(r).k === 'hoy'; })[0] || CATALOGO.filter(function (r) { return estadoRuta(r).k === 'pronto'; })[0];
     $('#rutas-hoy').textContent = 'Elegid la ruta · hoy es ' + new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
-    $('#tarjetas').innerHTML = CATALOGO.map(function (r) {
+    var paises = [];
+    CATALOGO.forEach(function (r) { (r.pais || []).forEach(function (p) { if (paises.indexOf(p) < 0) paises.push(p); }); });
+    paises.sort(function (a, b) { return a.localeCompare(b, 'es'); });
+    if (filtroPais && paises.indexOf(filtroPais) < 0) filtroPais = '';
+    $('#filtro-pais').innerHTML = '<span class="filtro-t">País</span>' + [''].concat(paises).map(function (p) {
+      return '<button type="button" class="pill' + (filtroPais === p ? ' activa' : '') + '" data-pais="' + esc(p) + '" aria-pressed="' + (filtroPais === p) + '">' + (p ? banderita(p) + esc(p) : ico('ruta') + 'Todos') + '</button>';
+    }).join('');
+    $('#tarjetas').innerHTML = CATALOGO.filter(function (r) { return !filtroPais || (r.pais || []).indexOf(filtroPais) >= 0; }).map(function (r) {
       var e = estadoRuta(r), es = toca && toca.id === r.id;
-      var boton = r.lista
-        ? '<button type="button" class="pill activa grande" data-a="entrar" data-id="' + r.id + '">' + ico('bandera') + (J.empezado ? 'Continuar' : 'Entrar') + '</button>' +
-          (J.empezado ? '<button type="button" class="pill" data-a="nombres">Cambiar nombres</button>' : '')
+      var boton = r.dias
+        ? '<span class="dias-t">Elegid el día</span>' + r.dias.map(function (d) {
+          return '<button type="button" class="pill' + (d.id === RUTA.id || (!r.dias.some(function (x) { return x.id === RUTA.id; }) && RUTAS[d.id].fecha === hoyISO()) ? ' activa' : '') + ' grande" data-a="entrar" data-id="' + d.id + '">' + ico('bandera') + esc(d.t) + (d.id === RUTA.id && J.empezado ? ' · Continuar' : '') + '</button>';
+        }).join('')
+        : r.lista
+        ? '<button type="button" class="pill activa grande" data-a="entrar" data-id="' + r.id + '">' + ico('bandera') + (r.id === RUTA.id && J.empezado ? 'Continuar' : 'Entrar') + '</button>' +
+          (r.id === RUTA.id && J.empezado ? '<button type="button" class="pill" data-a="nombres">Cambiar nombres</button>' : '')
         : '<button type="button" class="pill grande" disabled>' + ico('reloj-arena') + 'Próximamente</button>';
       return '<article class="tarjeta' + (es ? ' toca' : '') + (r.lista ? '' : ' pronto') + '">' +
         '<div class="tarjeta-ilu">' + ILU[r.ilu] + '<span class="chip">' + e.t + '</span>' + (es ? '<span class="chip toca-t">' + (e.k === 'hoy' ? 'Toca ahora' : 'La siguiente') + '</span>' : '') + '</div>' +
@@ -1578,7 +2614,7 @@ var ILU = (function () {
       $('#jugadores').innerHTML = lista.map(filaJugador).join('');
       $('#portada-modos').innerHTML = selectorModo();
       var d = new Date(), hoy = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-      var cuando = hoy === RUTA.fecha ? 'de hoy' : (hoy < RUTA.fecha ? 'del ' + RUTA.fechaTexto.toLowerCase() : 'del ' + RUTA.fechaTexto.toLowerCase() + ', para recordarlo');
+      var cuando = !RUTA.fecha ? 'por ' + RUTA.ciudad : hoy === RUTA.fecha ? 'de hoy' : (hoy < RUTA.fecha ? 'del ' + RUTA.fechaTexto.toLowerCase() : 'del ' + RUTA.fechaTexto.toLowerCase() + ', para recordarlo');
       $('#portada-sub').textContent = 'Vuestro itinerario ' + cuando + ' convertido en juego. Elegid la ruta completa o la exprés. ' + RUTA.nota + '.';
     }
   }
@@ -1598,6 +2634,7 @@ var ILU = (function () {
       guardarJ(); refrescar(); aviso('Quitada: ' + (pq ? pq.nombre : '')); return;
     }
     if (d.recuperar) { delete J.quitadas[J.modo + ':' + d.recuperar]; guardarJ(); refrescar(); aviso('Parada recuperada'); return; }
+    if (d.pais !== undefined && t.closest('#filtro-pais')) { filtroPais = d.pais; tarjetas(); return; }
     if (d.modo) { cambiarModo(d.modo); return; }
     if (d.nivel) { abrir('nivel-' + d.nivel); return; }
     if (d.hoja) { abrir(d.hoja); return; }
@@ -1620,18 +2657,19 @@ var ILU = (function () {
       case 'copia': hacerCopia(); break;
       case 'anadir': volver(); setTimeout(function () { modoHotel(true, 'nueva'); }, 80); break;
       case 'entrar':
+        if (id && id !== RUTA.id && RUTAS[id]) {
+          try { localStorage.setItem('miruta:activa', id); sessionStorage.setItem('miruta:entrar', '1'); } catch (e) { /* nada */ }
+          location.reload(); break;
+        }
+        try { localStorage.setItem('miruta:activa', RUTA.id); } catch (e) { /* nada */ }
         mostrarRutas(false);
         if (!J.empezado) portada(true);
         if (mapa) { tamMapa(); encuadrar(); }
         break;
       case 'nombres': mostrarRutas(false); portada(true); break;
-      case 'copiar-reloj':
-        try { navigator.clipboard.writeText(RELOJ).then(function () { aviso('Enlace copiado: pégalo en Mensajes'); }, function () { aviso('Copia el enlace a mano'); }); }
-        catch (e) { aviso('Copia el enlace a mano'); }
-        break;
       case 'horas-pdf':
         Object.keys(J.horas).forEach(function (k) { if (k.indexOf(J.modo + ':') === 0) delete J.horas[k]; });
-        guardarJ(); refrescar(); aviso('Horario del PDF'); break;
+        guardarJ(); refrescar(); aviso('Horario ' + DELPDF); break;
       case 'reiniciar':
         if (!confirmar) { confirmar = true; pintarHoja('logros'); break; }
         J = { equipo: J.equipo, empezado: true, modo: J.modo, m: {}, horas: J.horas, extra: J.extra, quitadas: J.quitadas }; guardarJ();
@@ -1681,10 +2719,16 @@ var ILU = (function () {
   $('#norte').addEventListener('click', function () { girar(0, true); });
 
   /* ---------- Inicio ---------- */
-  $('#portada-ilu').innerHTML = ILU.portada;
+  $('#portada-ilu').innerHTML = ILU[RUTA.portada] || ILU[(CATALOGO.filter(function (r) { return r.id === RUTA.id; })[0] || {}).ilu] || ILU.portada;
+  document.title = 'Mi Ruta · ' + RUTA.juego;
+  $('#portada-pdf').textContent = DELPDF;
+  $('#portada-fecha').textContent = RUTA.fechaTexto + ' · ' + RUTA.ciudad;
+  $('#portada-t').textContent = RUTA.juego;
   calcular(); hud(); carrusel(); iniciarMapa(); dibujar(); crearEquipo(); encuadrar(); vigilarCartas(); botones();
   portada(false);
-  mostrarRutas(true);
+  var entrarYa = false;
+  try { entrarYa = sessionStorage.getItem('miruta:entrar') === '1'; sessionStorage.removeItem('miruta:entrar'); } catch (e) { /* nada */ }
+  if (entrarYa) { mostrarRutas(false); if (!J.empezado) portada(true); } else mostrarRutas(true);
   (function () {
     var a = reloj(), s = siguiente();
     var c = document.querySelector('.carta[data-nivel="' + (a.id && a.id !== 'final' ? a.id : (s ? s.id : '')) + '"]');
